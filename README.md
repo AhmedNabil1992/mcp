@@ -33,8 +33,8 @@ OAuth discovery + registration endpoints are also exposed (via `Mcp::oauthRoutes
 
 ## Requirements
 
-- PHP `^8.2`
-- Laravel `^11`
+- PHP `^8.3`
+- Laravel `^13`
 - Filament `^4`
 - `laravel/mcp` `^0.5`
 - `laravel/passport` `^13`

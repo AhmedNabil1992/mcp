@@ -22,7 +22,7 @@ class SetupCommand extends Command
     public function handle(): int
     {
         if (! class_exists(Passport::class)) {
-            $this->error('Laravel Passport is not installed. Run: composer require laravel/passport:^12.0');
+            $this->error('Laravel Passport is not installed. Run: composer require laravel/passport:^13.0');
 
             return self::FAILURE;
         }
