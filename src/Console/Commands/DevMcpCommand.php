@@ -11,6 +11,6 @@ class DevMcpCommand extends Command
 {
     public function handle(): int
     {
-        return Artisan::call('mcp:start aureuserp-dev');
+        return Artisan::call('mcp:start', ['handle' => 'aureuserp-dev']);
     }
 }
