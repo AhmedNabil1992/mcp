@@ -99,11 +99,11 @@
             @foreach ($messages as $msg)
                 @if ($msg['role'] === 'user')
                     <div class="flex items-start justify-end gap-3">
-                        <div class="max-w-2xl bg-indigo-600 text-white dark:bg-indigo-600 dark:text-white px-4 py-3 rounded-2xl rounded-tr-xs shadow-sm text-sm leading-relaxed">
-                            <div class="whitespace-pre-wrap font-medium text-white select-text">{{ $msg['content'] }}</div>
-                            <div class="text-[10px] text-indigo-100 mt-1.5 text-left">{{ $msg['time'] }}</div>
+                        <div class="max-w-2xl px-4 py-3 rounded-2xl rounded-tr-xs shadow-sm text-sm leading-relaxed" style="background-color: #4f46e5 !important; color: #ffffff !important;">
+                            <div class="whitespace-pre-wrap font-medium select-text" style="color: #ffffff !important;">{{ $msg['content'] }}</div>
+                            <div class="text-[10px] mt-1.5 text-left" style="color: #e0e7ff !important;">{{ $msg['time'] }}</div>
                         </div>
-                        <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/70 dark:text-indigo-200 flex items-center justify-center shrink-0 text-xs font-bold ring-1 ring-indigo-200 dark:ring-indigo-800">
+                        <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold" style="background-color: #e0e7ff !important; color: #3730a3 !important; border: 1px solid #c7d2fe !important;">
                             {{ auth()->user()?->name ? mb_substr(auth()->user()->name, 0, 1) : 'U' }}
                         </div>
                     </div>
