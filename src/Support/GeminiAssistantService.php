@@ -126,10 +126,19 @@ Reply in the same language as the user's message (Arabic or English)."],
 
                 // If Gemini called one or more tools/functions
                 if ($hasFunctionCall) {
-                    // Append the model's turn EXACTLY as returned by Gemini to preserve thought_signature and metadata
+                    // Sanitize model parts: in Gemini REST API, function_call.args must be a JSON object ({}), never an empty JSON array ([]).
+                    $sanitizedModelParts = array_map(function ($p) {
+                        if (isset($p['functionCall'])) {
+                            $args = $p['functionCall']['args'] ?? [];
+                            $p['functionCall']['args'] = empty($args) ? (object) [] : (object) $args;
+                        }
+                        return $p;
+                    }, $parts);
+
+                    // Append the model's turn to contents
                     $contents[] = [
                         'role'  => 'model',
-                        'parts' => $parts,
+                        'parts' => $sanitizedModelParts,
                     ];
 
                     // Execute each function call and build response parts
