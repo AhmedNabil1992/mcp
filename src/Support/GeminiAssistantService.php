@@ -125,20 +125,28 @@ Reply in the same language as the user's message (Arabic or English)."],
                 // If Gemini called a tool/function
                 if ($functionCallPart) {
                     $fnName = $functionCallPart['name'];
-                    $fnArgs = $functionCallPart['args'] ?? [];
+                    $fnArgs = (array) ($functionCallPart['args'] ?? []);
+
+                    // Format args as an object to ensure JSON serializes as a JSON object, never an empty list
+                    $safeArgs = empty($fnArgs) ? (object) [] : (object) $fnArgs;
 
                     // Append the model's functionCall turn to contents
                     $contents[] = [
                         'role'  => 'model',
                         'parts' => [
-                            ['functionCall' => $functionCallPart],
+                            [
+                                'functionCall' => [
+                                    'name' => $fnName,
+                                    'args' => $safeArgs,
+                                ],
+                            ],
                         ],
                     ];
 
                     // Execute tool
                     $toolResult = $this->executeTool($fnName, $fnArgs);
 
-                    // Append functionResponse to contents
+                    // Append functionResponse to contents (response must be a key-value object)
                     $contents[] = [
                         'role'  => 'user',
                         'parts' => [
@@ -146,7 +154,7 @@ Reply in the same language as the user's message (Arabic or English)."],
                                 'functionResponse' => [
                                     'name'     => $fnName,
                                     'response' => [
-                                        'result' => $toolResult,
+                                        'content' => is_array($toolResult) ? $toolResult : ['data' => $toolResult],
                                     ],
                                 ],
                             ],

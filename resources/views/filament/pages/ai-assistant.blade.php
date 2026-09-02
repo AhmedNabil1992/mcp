@@ -94,26 +94,26 @@
         {{-- Chat Messages Scroll Area --}}
         <div
             id="chat-messages-container"
-            class="flex-1 p-6 overflow-y-auto space-y-5 bg-gradient-to-b from-gray-50/20 to-white dark:from-gray-900/40 dark:to-gray-900"
+            class="flex-1 p-6 overflow-y-auto space-y-5 bg-gray-50 dark:bg-gray-950"
         >
             @foreach ($messages as $msg)
                 @if ($msg['role'] === 'user')
                     <div class="flex items-start justify-end gap-3">
-                        <div class="max-w-2xl bg-primary-600 text-white px-4 py-3 rounded-2xl rounded-tr-xs shadow-sm text-sm leading-relaxed">
-                            <div class="whitespace-pre-wrap font-medium">{{ $msg['content'] }}</div>
-                            <div class="text-[10px] text-primary-200 mt-1.5 text-left">{{ $msg['time'] }}</div>
+                        <div class="max-w-2xl bg-indigo-600 text-white dark:bg-indigo-600 dark:text-white px-4 py-3 rounded-2xl rounded-tr-xs shadow-sm text-sm leading-relaxed">
+                            <div class="whitespace-pre-wrap font-medium text-white select-text">{{ $msg['content'] }}</div>
+                            <div class="text-[10px] text-indigo-100 mt-1.5 text-left">{{ $msg['time'] }}</div>
                         </div>
-                        <div class="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/60 text-primary-600 dark:text-primary-300 flex items-center justify-center shrink-0 text-xs font-bold">
+                        <div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/70 dark:text-indigo-200 flex items-center justify-center shrink-0 text-xs font-bold ring-1 ring-indigo-200 dark:ring-indigo-800">
                             {{ auth()->user()?->name ? mb_substr(auth()->user()->name, 0, 1) : 'U' }}
                         </div>
                     </div>
                 @else
                     <div class="flex items-start gap-3">
-                        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary-600 to-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-primary-600 text-white flex items-center justify-center shrink-0 shadow-sm">
                             <x-filament::icon icon="heroicon-o-sparkles" class="w-4 h-4" />
                         </div>
-                        <div class="max-w-3xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 px-5 py-4 rounded-2xl rounded-tl-xs shadow-2xs text-sm leading-relaxed">
-                            <div class="prose prose-sm dark:prose-invert max-w-none break-words space-y-2">
+                        <div class="max-w-3xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 px-5 py-4 rounded-2xl rounded-tl-xs shadow-2xs text-sm leading-relaxed ring-1 ring-gray-950/5 dark:ring-white/10">
+                            <div class="prose prose-sm dark:prose-invert max-w-none break-words space-y-2 text-gray-800 dark:text-gray-200">
                                 {!! Str::markdown($msg['content']) !!}
                             </div>
                             <div class="text-[10px] text-gray-400 dark:text-gray-500 mt-2 text-right">{{ $msg['time'] }}</div>
@@ -124,14 +124,14 @@
 
             {{-- Live Loading Indicator --}}
             <div wire:loading wire:target="sendMessage, askQuestion" class="flex items-start gap-3">
-                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-primary-600 to-indigo-600 text-white flex items-center justify-center shrink-0 animate-pulse">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-primary-600 text-white flex items-center justify-center shrink-0 animate-pulse">
                     <x-filament::icon icon="heroicon-o-sparkles" class="w-4 h-4" />
                 </div>
-                <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-3 rounded-2xl rounded-tl-xs shadow-2xs flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
-                    <span class="inline-block w-2 h-2 rounded-full bg-primary-600 animate-bounce"></span>
-                    <span class="inline-block w-2 h-2 rounded-full bg-indigo-600 animate-bounce [animation-delay:0.2s]"></span>
+                <div class="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 px-4 py-3 rounded-2xl rounded-tl-xs shadow-2xs flex items-center gap-3 text-sm text-gray-700 dark:text-gray-300 ring-1 ring-gray-950/5 dark:ring-white/10">
+                    <span class="inline-block w-2 h-2 rounded-full bg-indigo-600 animate-bounce"></span>
+                    <span class="inline-block w-2 h-2 rounded-full bg-primary-600 animate-bounce [animation-delay:0.2s]"></span>
                     <span class="inline-block w-2 h-2 rounded-full bg-emerald-600 animate-bounce [animation-delay:0.4s]"></span>
-                    <span class="text-xs">جاري استعلام بيانات الـ ERP والتفكير...</span>
+                    <span class="text-xs font-medium">جاري استعلام بيانات الـ ERP والتفكير...</span>
                 </div>
             </div>
         </div>
@@ -144,7 +144,7 @@
                         type="text"
                         wire:model="message"
                         placeholder="اسأل المساعد الذكي عن أي شيء في نظام AureusERP..."
-                        class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 dark:text-white placeholder-gray-400"
+                        class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                         wire:loading.attr="disabled"
                         autofocus
                     />
