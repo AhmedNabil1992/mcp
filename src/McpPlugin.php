@@ -19,7 +19,11 @@ class McpPlugin implements Plugin
 
     public function register(Panel $panel): void
     {
-        //
+        if ($panel->getId() === 'admin') {
+            $panel->pages([
+                \Webkul\Mcp\Filament\Pages\AiAssistant::class,
+            ]);
+        }
     }
 
     public function boot(Panel $panel): void

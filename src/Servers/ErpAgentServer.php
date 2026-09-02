@@ -43,6 +43,19 @@ use Webkul\Mcp\Tools\Admin\Business\Sales\SalesPipelineSummaryTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesQuotationConversionTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesTeamPerformanceTool;
 
+use Webkul\Mcp\Tools\Admin\Business\Employees\EmployeeDepartmentOverviewTool;
+use Webkul\Mcp\Tools\Admin\Business\Employees\EmployeeSummaryTool;
+use Webkul\Mcp\Tools\Admin\Business\Leads\LeadPipelineSummaryTool;
+use Webkul\Mcp\Tools\Admin\Business\Marketing\MarketingCampaignsOverviewTool;
+use Webkul\Mcp\Tools\Admin\Business\Partners\PartnerInsightsTool;
+use Webkul\Mcp\Tools\Admin\Business\Products\ProductCatalogSummaryTool;
+use Webkul\Mcp\Tools\Admin\Business\Recruitments\RecruitmentPipelineTool;
+use Webkul\Mcp\Tools\Admin\Business\Software\SoftwareLicensesOverviewTool;
+use Webkul\Mcp\Tools\Admin\Business\SoftwareOnline\OnlineInstancesOverviewTool;
+use Webkul\Mcp\Tools\Admin\Business\Support\SupportTicketOverviewTool;
+use Webkul\Mcp\Tools\Admin\Business\UniversalSearchRecordsTool;
+use Webkul\Mcp\Tools\Admin\Business\Wifi\WifiMetricsOverviewTool;
+
 class ErpAgentServer extends Server
 {
     protected string $name = 'Aureus ERP Agent';
@@ -57,10 +70,43 @@ class ErpAgentServer extends Server
         This MCP server provides comprehensive business insights without logging into the system.
         All tools are READ-ONLY - they only retrieve data, no write operations.
 
+        ## Core Search & Query
+        - universal_search_records: Direct keyword search across Orders, Invoices, Products, Partners, Employees, Tickets, Projects, Leads, Campaigns, Licenses, Instances, Vouchers.
+
+        ## Sales Leads & CRM (1 tool)
+        - lead_pipeline_summary: Leads count, status, sources, temperatures, and sales reps
+
+        ## Marketing & Campaigns (1 tool)
+        - marketing_campaigns_overview: Campaigns by advertising platform, status, and managers
+
+        ## Software Licenses & Programs (1 tool)
+        - software_licenses_overview: Desktop software licenses, activation statuses, plans, and partners
+
+        ## Software Online SaaS (1 tool)
+        - online_instances_overview: Cloud tenant instances, billing cycles, systems, and statuses
+
+        ## WiFi Hotspot & Vouchers (1 tool)
+        - wifi_metrics_overview: Captive portal internet packages, vouchers generated, and permanent users
+
+        ## Human Resources (2 tools)
+        - employee_summary: Overall employee counts, demographics, departments, and job titles
+        - employee_department_overview: Department structure and headcount distribution
+
+        ## Recruitment (1 tool)
+        - recruitment_pipeline: Job vacancies, applicant pipeline, stages and statuses
+
+        ## Partners & Contacts (1 tool)
+        - partner_insights: Customer vs supplier counts, industries, individual vs company distribution
+
+        ## Products (1 tool)
+        - product_catalog_summary: Products catalog, categories, goods vs services, pricing averages
+
+        ## Technical Support (1 tool)
+        - support_ticket_overview: Open/unread tickets, priorities, assignees, client breakdown
+
         ## Sales Management (5 tools)
         - sales_order_insights: Recent orders, revenue, counts by period, top performers
         - sales_order_fulfillment_status: Delivery status, overdue commitments and opportunities
-       
         - sales_pipeline_summary: Leads and opportunities
         - sales_team_performance: Team metrics
         - sales_quotation_conversion: Quote to order rates
@@ -103,19 +149,46 @@ class ErpAgentServer extends Server
         - project_task_backlog: Tasks by status
         - project_deadline_risk: Overdue tasks
         - project_timesheet_summary: Time logged
-
-        ## Example Questions
-        - "How many orders this week?", "Total sales this month"
-        - "Pending purchase orders?", "Top suppliers?"
-        - "Overdue invoices?", "Accounts receivable?"
-        - "Low stock products?", "Stock by warehouse?"
-        - "Active projects?", "Overdue tasks?"
     MARKDOWN;
 
     /**
      * @var array<int, class-string<\Laravel\Mcp\Server\Tool>>
      */
     protected array $tools = [
+        // Universal Search
+        UniversalSearchRecordsTool::class,
+
+        // Leads & CRM
+        LeadPipelineSummaryTool::class,
+
+        // Marketing
+        MarketingCampaignsOverviewTool::class,
+
+        // Software Desktop Licenses
+        SoftwareLicensesOverviewTool::class,
+
+        // Software Online SaaS Instances
+        OnlineInstancesOverviewTool::class,
+
+        // WiFi Hotspot & Vouchers
+        WifiMetricsOverviewTool::class,
+
+        // Employees & HR
+        EmployeeSummaryTool::class,
+        EmployeeDepartmentOverviewTool::class,
+
+        // Recruitment
+        RecruitmentPipelineTool::class,
+
+        // Partners & Contacts
+        PartnerInsightsTool::class,
+
+        // Products
+        ProductCatalogSummaryTool::class,
+
+        // Technical Support
+        SupportTicketOverviewTool::class,
+
         // Sales
         SalesOrderInsightsTool::class,
         SalesOrderFulfillmentStatusTool::class,
@@ -178,4 +251,12 @@ class ErpAgentServer extends Server
      * @var array<int, class-string<\Laravel\Mcp\Server\Resource>>
      */
     protected array $resources = [];
+
+    /**
+     * @return array<int, class-string<\Laravel\Mcp\Server\Tool>>
+     */
+    public function getRegisteredTools(): array
+    {
+        return $this->tools;
+    }
 }

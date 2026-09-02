@@ -23,6 +23,7 @@ class McpServiceProvider extends PackageServiceProvider
     public function configureCustomPackage(Package $package): void
     {
         $package->name(static::$name)
+            ->hasViews()
             ->hasRoute('ai')
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command->endWith = function (InstallCommand $installCommand): void {

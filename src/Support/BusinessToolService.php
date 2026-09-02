@@ -25,11 +25,53 @@ class BusinessToolService
         protected SalesToolService $salesService,
         protected PurchaseToolService $purchaseService,
         protected ProjectToolService $projectService,
+        protected EmployeeToolService $employeeService,
+        protected RecruitmentToolService $recruitmentService,
+        protected PartnerToolService $partnerService,
+        protected ProductToolService $productService,
+        protected SupportToolService $supportService,
+        protected UniversalQueryService $universalQueryService,
+        protected LeadToolService $leadService,
+        protected MarketingToolService $marketingService,
+        protected SoftwareToolService $softwareService,
+        protected SoftwareOnlineToolService $softwareOnlineService,
+        protected WifiToolService $wifiService,
     ) {}
 
     public function run(string $metric): array
     {
         $payload = match ($metric) {
+            // Lead Metrics
+            'lead_pipeline_summary'        => $this->leadService->leadPipelineSummary(),
+
+            // Marketing Metrics
+            'marketing_campaigns_overview' => $this->marketingService->marketingCampaignsOverview(),
+
+            // Software Licenses Metrics
+            'software_licenses_overview'   => $this->softwareService->softwareLicensesOverview(),
+
+            // Software Online Instances Metrics
+            'online_instances_overview'    => $this->softwareOnlineService->onlineInstancesOverview(),
+
+            // Wifi Metrics
+            'wifi_metrics_overview'        => $this->wifiService->wifiMetricsOverview(),
+
+            // Employee & HR Metrics
+            'employee_summary'             => $this->employeeService->employeeSummary(),
+            'employee_department_overview' => $this->employeeService->employeeDepartmentOverview(),
+
+            // Recruitment Metrics
+            'recruitment_pipeline'         => $this->recruitmentService->recruitmentPipeline(),
+
+            // Partner Metrics
+            'partner_insights'             => $this->partnerService->partnerInsights(),
+
+            // Product Metrics
+            'product_catalog_summary'      => $this->productService->productCatalogSummary(),
+
+            // Support Metrics
+            'support_ticket_overview'      => $this->supportService->supportTicketOverview(),
+
             // Invoice Metrics
             'invoice_list'              => $this->invoiceService->invoiceList(),
             'invoice_overdue_summary'   => $this->invoiceService->invoiceOverdueSummary(),
@@ -201,6 +243,45 @@ class BusinessToolService
             'inventory_stock_insights' => [
                 'top_products_by_on_hand'  => Product::class,
                 'top_products_by_shortage' => Product::class,
+            ],
+            'employee_summary' => [
+                'top_departments_by_count' => 'Webkul\\Employee\\Models\\Department',
+            ],
+            'employee_department_overview' => [
+                'department_distribution' => 'Webkul\\Employee\\Models\\Department',
+            ],
+            'recruitment_pipeline' => [
+                'applicants_by_job'   => 'Webkul\\Recruitment\\Models\\JobPosition',
+                'applicants_by_stage' => 'Webkul\\Recruitment\\Models\\Stage',
+            ],
+            'partner_insights' => [
+                'partners_by_industry' => 'Webkul\\Partner\\Models\\Industry',
+                'partners_by_country'  => 'Webkul\\Support\\Models\\Country',
+            ],
+            'product_catalog_summary' => [
+                'products_by_category' => 'Webkul\\Product\\Models\\Category',
+            ],
+            'support_ticket_overview' => [
+                'top_assignees'      => User::class,
+                'tickets_by_partner' => Partner::class,
+            ],
+            'lead_pipeline_summary' => [
+                'top_assigned'      => User::class,
+                'leads_by_campaign' => 'Webkul\\Marketing\\Models\\Campaign',
+            ],
+            'marketing_campaigns_overview' => [
+                'campaigns_by_assignee' => User::class,
+            ],
+            'software_licenses_overview' => [
+                'licenses_by_program'  => 'Webkul\\Software\\Models\\Program',
+                'top_license_partners' => Partner::class,
+            ],
+            'online_instances_overview' => [
+                'instances_by_system'  => 'Webkul\\SoftwareOnline\\Models\\OnlineSystem',
+                'instances_by_partner' => Partner::class,
+            ],
+            'wifi_metrics_overview' => [
+                'vouchers_by_batch' => 'Webkul\\Wifi\\Models\\WifiVoucherBatch',
             ],
         ];
 

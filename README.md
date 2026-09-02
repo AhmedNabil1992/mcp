@@ -109,6 +109,51 @@ For developers and coding agents. Always call `search_docs` first before writing
 
 Available via **HTTP only** (`POST /mcp/erp`, requires OAuth). For business users and AI assistants querying ERP data. All tools are **READ-ONLY**.
 
+#### Search & Query (1 tool)
+
+- `universal_search_records` — Search across core entities (Orders, Invoices, Products, Partners, Employees, Tickets, Projects, Leads, Campaigns, Licenses, Instances, Vouchers) by keyword
+
+#### Leads & CRM (1 tool)
+
+- `lead_pipeline_summary` — Lead volumes, pipeline stages, temperatures (hot/warm/cold), sources, and sales reps
+
+#### Marketing & Campaigns (1 tool)
+
+- `marketing_campaigns_overview` — Campaigns by advertising platform (Facebook, Google, etc.), status, and managers
+
+#### Software Desktop Licenses (1 tool)
+
+- `software_licenses_overview` — Desktop software licenses, activations, plans, programs, and partners
+
+#### Software Online SaaS Instances (1 tool)
+
+- `online_instances_overview` — Cloud SaaS tenant instances, systems, statuses, and billing cycles
+
+#### WiFi Hotspot & Vouchers (1 tool)
+
+- `wifi_metrics_overview` — Captive portal internet packages, vouchers count, and permanent subscribers
+
+#### Human Resources & Employees (2 tools)
+
+- `employee_summary` — Headcount, department distribution, job titles, and demographics
+- `employee_department_overview` — Department structure and employee headcount
+
+#### Recruitment (1 tool)
+
+- `recruitment_pipeline` — Job vacancies, applicant counts, stages and statuses
+
+#### Partners & Contacts (1 tool)
+
+- `partner_insights` — Customers vs suppliers, companies vs individuals, industries and countries
+
+#### Products (1 tool)
+
+- `product_catalog_summary` — Products catalog, categories, goods vs services, pricing averages
+
+#### Technical Support (1 tool)
+
+- `support_ticket_overview` — Open, unread, and reopened tickets, priority & status distributions
+
 #### Sales (5 tools)
 
 - `sales_order_insights` — Recent orders, revenue, counts by period, top performers

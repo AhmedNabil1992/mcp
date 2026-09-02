@@ -50,3 +50,38 @@ it('returns sales pipeline payload for erp agent server', function () {
         ->assertOk()
         ->assertSee('sales_pipeline_summary');
 });
+
+it('returns employee summary payload for erp agent server', function () {
+    $user = User::factory()->create();
+
+    $response = ErpAgentServer::actingAs($user)->tool(\Webkul\Mcp\Tools\Admin\Business\Employees\EmployeeSummaryTool::class);
+
+    $response
+        ->assertOk()
+        ->assertSee('employee_summary');
+});
+
+it('returns partner insights payload for erp agent server', function () {
+    $user = User::factory()->create();
+
+    $response = ErpAgentServer::actingAs($user)->tool(\Webkul\Mcp\Tools\Admin\Business\Partners\PartnerInsightsTool::class);
+
+    $response
+        ->assertOk()
+        ->assertSee('partner_insights');
+});
+
+it('executes universal search records tool without error', function () {
+    $user = User::factory()->create();
+
+    $response = ErpAgentServer::actingAs($user)->tool(\Webkul\Mcp\Tools\Admin\Business\UniversalSearchRecordsTool::class, [
+        'entity' => 'partners',
+        'query'  => 'test',
+        'limit'  => 5,
+    ]);
+
+    $response
+        ->assertOk()
+        ->assertSee('entity');
+});
+
