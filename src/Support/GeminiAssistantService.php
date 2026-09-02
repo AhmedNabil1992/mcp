@@ -110,55 +110,51 @@ Reply in the same language as the user's message (Arabic or English)."],
                 }
 
                 $parts = $candidate['parts'];
-                $functionCallPart = null;
+                $hasFunctionCall = false;
+                $functionCalls = [];
                 $textResponse = '';
 
                 foreach ($parts as $part) {
                     if (isset($part['functionCall'])) {
-                        $functionCallPart = $part['functionCall'];
+                        $hasFunctionCall = true;
+                        $functionCalls[] = $part['functionCall'];
                     }
                     if (isset($part['text'])) {
                         $textResponse .= $part['text'];
                     }
                 }
 
-                // If Gemini called a tool/function
-                if ($functionCallPart) {
-                    $fnName = $functionCallPart['name'];
-                    $fnArgs = (array) ($functionCallPart['args'] ?? []);
-
-                    // Format args as an object to ensure JSON serializes as a JSON object, never an empty list
-                    $safeArgs = empty($fnArgs) ? (object) [] : (object) $fnArgs;
-
-                    // Append the model's functionCall turn to contents
+                // If Gemini called one or more tools/functions
+                if ($hasFunctionCall) {
+                    // Append the model's turn EXACTLY as returned by Gemini to preserve thought_signature and metadata
                     $contents[] = [
                         'role'  => 'model',
-                        'parts' => [
-                            [
-                                'functionCall' => [
-                                    'name' => $fnName,
-                                    'args' => $safeArgs,
-                                ],
-                            ],
-                        ],
+                        'parts' => $parts,
                     ];
 
-                    // Execute tool
-                    $toolResult = $this->executeTool($fnName, $fnArgs);
+                    // Execute each function call and build response parts
+                    $responseParts = [];
+                    foreach ($functionCalls as $fnCall) {
+                        $fnName = $fnCall['name'];
+                        $fnArgs = (array) ($fnCall['args'] ?? []);
 
-                    // Append functionResponse to contents (response must be a key-value object)
-                    $contents[] = [
-                        'role'  => 'user',
-                        'parts' => [
-                            [
-                                'functionResponse' => [
-                                    'name'     => $fnName,
-                                    'response' => [
-                                        'content' => is_array($toolResult) ? $toolResult : ['data' => $toolResult],
-                                    ],
+                        // Execute tool
+                        $toolResult = $this->executeTool($fnName, $fnArgs);
+
+                        $responseParts[] = [
+                            'functionResponse' => [
+                                'name'     => $fnName,
+                                'response' => [
+                                    'content' => is_array($toolResult) ? $toolResult : ['data' => $toolResult],
                                 ],
                             ],
-                        ],
+                        ];
+                    }
+
+                    // Append user's functionResponse turn
+                    $contents[] = [
+                        'role'  => 'user',
+                        'parts' => $responseParts,
                     ];
 
                     // Loop again so model can see tool output
