@@ -182,8 +182,7 @@ Reply in the same language as the user's message (Arabic or English)."],
      */
     public function getGeminiToolDeclarations(): array
     {
-        $server = app(ErpAgentServer::class);
-        $toolClasses = $server->getRegisteredTools();
+        $toolClasses = ErpAgentServer::getRegisteredTools();
         $declarations = [];
 
         foreach ($toolClasses as $toolClass) {

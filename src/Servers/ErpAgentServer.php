@@ -154,7 +154,7 @@ class ErpAgentServer extends Server
     /**
      * @var array<int, class-string<\Laravel\Mcp\Server\Tool>>
      */
-    protected array $tools = [
+    protected static array $toolsList = [
         // Universal Search
         UniversalSearchRecordsTool::class,
 
@@ -252,11 +252,17 @@ class ErpAgentServer extends Server
      */
     protected array $resources = [];
 
+    public function __construct(\Laravel\Mcp\Server\Contracts\Transport $transport)
+    {
+        $this->tools = static::$toolsList;
+        parent::__construct($transport);
+    }
+
     /**
      * @return array<int, class-string<\Laravel\Mcp\Server\Tool>>
      */
-    public function getRegisteredTools(): array
+    public static function getRegisteredTools(): array
     {
-        return $this->tools;
+        return static::$toolsList;
     }
 }
