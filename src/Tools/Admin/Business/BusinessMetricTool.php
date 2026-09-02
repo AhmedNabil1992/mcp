@@ -19,6 +19,11 @@ abstract class BusinessMetricTool extends Tool
 
     abstract protected function metric(): string;
 
+    public function name(): string
+    {
+        return $this->metric();
+    }
+
     protected function pluginName(): ?string
     {
         return null;
