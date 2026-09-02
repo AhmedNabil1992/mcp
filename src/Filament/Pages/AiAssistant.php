@@ -2,8 +2,10 @@
 
 namespace Webkul\Mcp\Filament\Pages;
 
+use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Illuminate\Contracts\Support\Htmlable;
 use Webkul\Mcp\Support\GeminiAssistantService;
 use Webkul\Support\Enums\NavigationGroup;
 
@@ -13,9 +15,14 @@ class AiAssistant extends Page
 
     protected static ?string $slug = 'ai-assistant';
 
-    protected static ?string $navigationIcon = 'heroicon-o-sparkles';
+    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-sparkles';
 
     protected static ?int $navigationSort = 1;
+
+    public static function getNavigationIcon(): string | BackedEnum | Htmlable | null
+    {
+        return 'heroicon-o-sparkles';
+    }
 
     public string $message = '';
 
