@@ -74,6 +74,7 @@ class BusinessToolService
 
             // Invoice Metrics
             'invoice_list'              => $this->invoiceService->invoiceList(),
+            'monthly_sales_profitability' => $this->invoiceService->monthlySalesProfitability(),
             'invoice_overdue_summary'   => $this->invoiceService->invoiceOverdueSummary(),
             'invoice_aging_buckets'     => $this->invoiceService->invoiceAgingBuckets(),
             'invoice_payment_followups' => $this->invoiceService->invoicePaymentFollowups(),

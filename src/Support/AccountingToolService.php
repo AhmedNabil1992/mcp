@@ -4,9 +4,12 @@ namespace Webkul\Mcp\Support;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Webkul\Account\Enums\AccountType;
+use Webkul\Account\Models\Account;
 use Webkul\Account\Models\BankStatement;
 use Webkul\Account\Models\BankStatementLine;
 use Webkul\Account\Models\Move;
+use Webkul\Account\Models\MoveLine;
 use Webkul\Accounting\Models\Bill;
 use Webkul\Accounting\Models\Invoice;
 use Webkul\Accounting\Models\JournalEntry;
@@ -173,10 +176,36 @@ class AccountingToolService
             ->whereIn('move_type', ['in_invoice', 'in_receipt'])
             ->whereIn('payment_state', ['not_paid', 'partial', 'in_payment']));
 
+        $cashAccounts = Account::query()->where('account_type', AccountType::ASSET_CASH)->get(['id', 'code', 'name']);
+        $cashBalances = $cashAccounts->map(function (Account $account): array {
+            $balance = MoveLine::query()
+                ->where('account_id', $account->id)
+                ->where('parent_state', 'posted')
+                ->sum('balance');
+
+            return ['account_id' => $account->id, 'code' => $account->code, 'name' => $account->name, 'balance' => round((float) $balance, 2)];
+        })->values();
+
+        $partnerBalances = MoveLine::query()
+            ->whereHas('account', fn (Builder $query) => $query->where('account_type', AccountType::ASSET_RECEIVABLE))
+            ->where('parent_state', 'posted')
+            ->whereNotNull('partner_id')
+            ->selectRaw('partner_id, SUM(balance) as balance')
+            ->groupBy('partner_id')
+            ->get();
+        $customerReceivables = $partnerBalances->where('balance', '>', 0)->sum('balance');
+        $customerPrepayments = abs((float) $partnerBalances->where('balance', '<', 0)->sum('balance'));
+
         return [
+            'as_of' => Carbon::today()->toDateString(),
+            'cash_and_bank_balance' => round((float) $cashBalances->sum('balance'), 2),
+            'cash_and_bank_accounts' => $cashBalances->all(),
+            'customer_receivable_ledger_balance' => round((float) $customerReceivables, 2),
+            'customer_prepaid_balance' => round($customerPrepayments, 2),
             'receivable_open_amount' => $receivable,
             'payable_open_amount'    => $payable,
             'net_exposure'           => $receivable - $payable,
+            'interpretation' => 'Cash/bank is the posted ledger balance. Customer prepaid balance is money held on account for future purchases and is not an accounts-receivable amount.',
         ];
     }
 }

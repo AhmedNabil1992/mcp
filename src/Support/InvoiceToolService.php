@@ -4,12 +4,82 @@ namespace Webkul\Mcp\Support;
 
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Webkul\Account\Models\Move;
 use Webkul\Invoice\Models\Invoice;
 use Webkul\Mcp\Support\Concerns\HasQueryHelpers;
+use Webkul\Product\Enums\ProductType;
+use Webkul\Product\Services\ProductCostCalculator;
 
 class InvoiceToolService
 {
     use HasQueryHelpers;
+
+    public function monthlySalesProfitability(): array
+    {
+        $today = Carbon::today();
+        $start = $today->copy()->startOfMonth()->toDateString();
+        $end = $today->copy()->endOfMonth()->toDateString();
+
+        $moves = Move::query()
+            ->with(['invoiceLines.product.uom', 'invoiceLines.uom'])
+            ->where('state', 'posted')
+            ->whereIn('move_type', ['out_invoice', 'out_receipt', 'out_refund'])
+            ->whereBetween('invoice_date', [$start, $end])
+            ->get();
+
+        $costCalculator = app(ProductCostCalculator::class);
+        $revenue = 0.0;
+        $tax = 0.0;
+        $total = 0.0;
+        $estimatedCost = 0.0;
+        $directInvoices = 0;
+        $salesOrderInvoices = 0;
+
+        foreach ($moves as $move) {
+            $direction = $move->move_type->value === 'out_refund' ? -1 : 1;
+            $revenue += $direction * abs((float) $move->amount_untaxed);
+            $tax += $direction * abs((float) $move->amount_tax);
+            $total += $direction * abs((float) $move->amount_total);
+
+            if ($direction > 0) {
+                filled($move->invoice_origin) ? $salesOrderInvoices++ : $directInvoices++;
+            }
+
+            foreach ($move->invoiceLines as $line) {
+                $product = $line->product;
+
+                if (! $product || $product->type === ProductType::SERVICE) {
+                    continue;
+                }
+
+                $quantity = abs((float) $line->quantity);
+                if ($line->uom && $product->uom) {
+                    $quantity = (float) $line->uom->computeQuantity($quantity, $product->uom, false);
+                }
+
+                $estimatedCost += $direction * $quantity * $costCalculator->unitCost($product, $move->company_id);
+            }
+        }
+
+        $grossProfit = $revenue - $estimatedCost;
+
+        return [
+            'period' => ['from' => $start, 'to' => $end],
+            'posted_document_count' => $moves->count(),
+            'invoice_and_receipt_count' => $moves->filter(fn (Move $move) => in_array($move->move_type->value, ['out_invoice', 'out_receipt'], true))->count(),
+            'credit_note_count' => $moves->filter(fn (Move $move) => $move->move_type->value === 'out_refund')->count(),
+            'sales_order_invoice_count' => $salesOrderInvoices,
+            'direct_invoice_count' => $directInvoices,
+            'net_sales_before_tax' => round($revenue, 2),
+            'net_tax' => round($tax, 2),
+            'net_sales_including_tax' => round($total, 2),
+            'estimated_cost_of_goods_sold' => round($estimatedCost, 2),
+            'estimated_gross_profit' => round($grossProfit, 2),
+            'estimated_gross_margin_percent' => $revenue !== 0.0 ? round(($grossProfit / $revenue) * 100, 2) : 0.0,
+            'cost_basis' => 'Current product cost; BOM/component cost is used for manufactured products and service products have zero cost.',
+            'profit_is_estimate' => true,
+        ];
+    }
 
     public function invoiceList(): array
     {

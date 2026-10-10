@@ -50,6 +50,7 @@ use Webkul\Mcp\Tools\Admin\Business\Purchases\PurchaseSupplierDeliveryRiskTool;
 use Webkul\Mcp\Tools\Admin\Business\Recruitments\RecruitmentPipelineTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesOrderFulfillmentStatusTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesOrderInsightsTool;
+use Webkul\Mcp\Tools\Admin\Business\Sales\MonthlySalesProfitabilityTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesPipelineSummaryTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesQuotationConversionTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesTeamPerformanceTool;
@@ -84,7 +85,7 @@ class ErpAgentServer extends Server
         - marketing_campaigns_overview: Campaigns by advertising platform, status, and managers
 
         ## Software Licenses & Programs (1 tool)
-        - software_licenses_overview: Desktop software licenses, activation statuses, plans, and partners
+        - software_licenses_overview: Current-month and all-time desktop license counts, statuses, plans, and partners
 
         ## Software Online SaaS (1 tool)
         - online_instances_overview: Cloud tenant instances, billing cycles, systems, and statuses
@@ -108,7 +109,8 @@ class ErpAgentServer extends Server
         ## Technical Support (1 tool)
         - support_ticket_overview: Open/unread tickets, priorities, assignees, client breakdown
 
-        ## Sales Management (5 tools)
+        ## Sales Management (6 tools)
+        - monthly_sales_profitability: Complete posted monthly invoices (including direct invoices), BOM costs, and estimated gross profit
         - sales_order_insights: Recent orders, revenue, counts by period, top performers
         - sales_order_fulfillment_status: Delivery status, overdue commitments and opportunities
         - sales_pipeline_summary: Leads and opportunities
@@ -134,7 +136,7 @@ class ErpAgentServer extends Server
         - account_payable_summary: AP amounts
         - account_move_state_breakdown: Journal states
         - account_payment_state_breakdown: Payment states
-        - accounting_cashflow_snapshot: Cash flow
+        - accounting_cashflow_snapshot: Cash/bank, customer prepayments, receivables, and payables
         - accounting_tax_liability_snapshot: Tax obligations
         - accounting_journal_entry_health: Entry issues
         - accounting_unposted_entries: Unposted entries
@@ -197,6 +199,7 @@ class ErpAgentServer extends Server
         SupportTicketOverviewTool::class,
 
         // Sales
+        MonthlySalesProfitabilityTool::class,
         SalesOrderInsightsTool::class,
         SalesOrderFulfillmentStatusTool::class,
         SalesPipelineSummaryTool::class,
