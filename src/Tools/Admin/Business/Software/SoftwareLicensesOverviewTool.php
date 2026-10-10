@@ -13,7 +13,7 @@ class SoftwareLicensesOverviewTool extends BusinessMetricTool
         - Licenses distribution by status (active, expired, suspended)
         - Licenses distribution by license plan
         - Top programs and license holders / partners
-        Use current_month.created_count to answer "how many licenses did we make this month?"; do not substitute the all-time total.
+        Use current_month.activated_count to answer "how many licenses did we make/activate this month?"; created_count is only record creation and may include imports. Do not substitute the all-time total.
     MARKDOWN;
 
     protected function metric(): string
