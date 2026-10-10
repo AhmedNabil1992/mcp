@@ -116,4 +116,39 @@ class AiAssistant extends Page
         $this->messages = [];
         $this->mount(app(GeminiAssistantService::class));
     }
+
+    /** @return array<string, mixed> */
+    public function createVoiceSession(): array
+    {
+        Gate::authorize('page_mcp_ai_assistant');
+
+        return app(GeminiAssistantService::class)->createLiveSession();
+    }
+
+    public function executeVoiceTool(string $name, array $arguments = []): mixed
+    {
+        Gate::authorize('page_mcp_ai_assistant');
+
+        if (! preg_match('/^[a-z0-9_\-]+$/i', $name)) {
+            throw new \InvalidArgumentException('Invalid tool name.');
+        }
+
+        return app(GeminiAssistantService::class)->executeRegisteredTool($name, $arguments);
+    }
+
+    public function recordVoiceTurn(string $userTranscript, string $assistantTranscript): void
+    {
+        Gate::authorize('page_mcp_ai_assistant');
+
+        $userTranscript = trim($userTranscript);
+        $assistantTranscript = trim($assistantTranscript);
+
+        if ($userTranscript !== '') {
+            $this->messages[] = ['role' => 'user', 'content' => mb_substr($userTranscript, 0, 4000), 'time' => now()->format('H:i')];
+        }
+
+        if ($assistantTranscript !== '') {
+            $this->messages[] = ['role' => 'assistant', 'content' => mb_substr($assistantTranscript, 0, 12000), 'time' => now()->format('H:i')];
+        }
+    }
 }

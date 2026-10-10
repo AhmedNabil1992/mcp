@@ -5,6 +5,7 @@ namespace Webkul\Mcp\Support;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use RuntimeException;
 use Laravel\Mcp\Server\Tool;
 use Throwable;
 use Webkul\Mcp\Servers\ErpAgentServer;
@@ -16,6 +17,8 @@ class GeminiAssistantService
 
     protected string $model;
 
+    protected string $liveModel;
+
     protected string $baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
 
     public function __construct(
@@ -24,6 +27,7 @@ class GeminiAssistantService
     ) {
         $this->apiKey = config('services.gemini.api_key') ?: env('GEMINI_API_KEY');
         $this->model = config('services.gemini.model') ?: env('GEMINI_MODEL', 'gemini-2.5-flash');
+        $this->liveModel = config('services.gemini.live_model') ?: env('GEMINI_LIVE_MODEL', 'gemini-3.1-flash-live-preview');
     }
 
     public function isConfigured(): bool
@@ -34,6 +38,53 @@ class GeminiAssistantService
     public function getModel(): string
     {
         return $this->model;
+    }
+
+    public function getLiveModel(): string
+    {
+        return $this->liveModel;
+    }
+
+    /**
+     * @return array{token:string,model:string,tools:array<int, array<string, mixed>>,system_instruction:string}
+     */
+    public function createLiveSession(): array
+    {
+        if (! $this->isConfigured()) {
+            throw new RuntimeException('Gemini API Key is not configured.');
+        }
+
+        $response = Http::acceptJson()
+            ->asJson()
+            ->withHeader('x-goog-api-key', $this->apiKey)
+            ->timeout(30)
+            ->post('https://generativelanguage.googleapis.com/v1beta/auth_tokens', [
+                'uses' => 1,
+                'expireTime' => now()->addMinutes(15)->utc()->format('Y-m-d\TH:i:s\Z'),
+                'newSessionExpireTime' => now()->addMinute()->utc()->format('Y-m-d\TH:i:s\Z'),
+            ]);
+
+        if (! $response->successful() || blank($response->json('name'))) {
+            throw new RuntimeException('Unable to create a secure Gemini Live session: '.($response->json('error.message') ?? $response->body()));
+        }
+
+        return [
+            'token' => (string) $response->json('name'),
+            'model' => $this->liveModel,
+            'tools' => $this->getGeminiToolDeclarations(),
+            'system_instruction' => $this->systemInstruction(),
+        ];
+    }
+
+    public function executeRegisteredTool(string $name, array $arguments = []): mixed
+    {
+        $registeredNames = collect($this->getGeminiToolDeclarations())->pluck('name');
+
+        if (! $registeredNames->contains(str_replace('-', '_', $name))) {
+            throw new RuntimeException("Unregistered MCP tool [{$name}].");
+        }
+
+        return $this->executeTool($name, $arguments);
     }
 
     /**
@@ -65,15 +116,7 @@ class GeminiAssistantService
 
         $systemInstruction = [
             'parts' => [
-                ['text' => "You are AureusERP AI Assistant, an expert ERP intelligence agent. 
-You answer questions about every installed AureusERP plugin. Use installed_plugins_overview whenever plugin availability or MCP coverage is unclear.
-You have access to read-only ERP tools. ALWAYS use tools to fetch exact, real-time facts and figures before answering and never claim that data was changed.
-Respect the authenticated user's company and record visibility. Distinguish customer receivables from customer prepaid balances.
-For monthly sales, invoices, revenue, or profitability, use monthly_sales_profitability. It includes sales-order invoices and direct invoices; sales_order_insights is only order intake and must not be presented as complete invoiced sales.
-When asked how many licenses were made or activated this month, report software_licenses_overview.current_month.activated_count, not created_count or total_licenses.
-For current account balances, use accounting_cashflow_snapshot and report cash/bank, customer prepaid balance, receivables, and payables separately.
-Respond politely, concisely, and format numbers, currencies, and lists cleanly in markdown.
-Reply in the same language as the user's message (Arabic or English)."],
+                ['text' => $this->systemInstruction()],
             ],
         ];
 
@@ -201,6 +244,19 @@ Reply in the same language as the user's message (Arabic or English)."],
         return [
             'content' => 'Max tool calling iterations reached.',
         ];
+    }
+
+    public function systemInstruction(): string
+    {
+        return "You are AureusERP AI Assistant, an expert ERP intelligence agent.
+You answer questions about every installed AureusERP plugin. Use installed_plugins_overview whenever plugin availability or MCP coverage is unclear.
+You have access to read-only ERP tools. ALWAYS use tools to fetch exact, real-time facts and figures before answering and never claim that data was changed.
+Respect the authenticated user's company and record visibility. Distinguish customer receivables from customer prepaid balances.
+For monthly sales, invoices, revenue, or profitability, use monthly_sales_profitability. It includes sales-order invoices and direct invoices; sales_order_insights is only order intake and must not be presented as complete invoiced sales.
+When asked how many licenses were made or activated this month, report software_licenses_overview.current_month.activated_count, not created_count or total_licenses.
+For current account balances, use accounting_cashflow_snapshot and report cash/bank, customer prepaid balance, receivables, and payables separately.
+Respond politely, concisely, and format numbers, currencies, and lists cleanly in markdown.
+Reply in the same language as the user's message (Arabic or English). For spoken Arabic, use clear natural Arabic and understand Egyptian Arabic.";
     }
 
     /**
