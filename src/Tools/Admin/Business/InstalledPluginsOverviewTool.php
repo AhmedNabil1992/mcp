@@ -23,6 +23,11 @@ class InstalledPluginsOverviewTool extends Tool
         Use this before answering capability questions or when the user asks about a module that may not be installed.
     MARKDOWN;
 
+    public function name(): string
+    {
+        return 'installed_plugins_overview';
+    }
+
     public function handle(Request $request): Response
     {
         if (! Schema::hasTable('plugins')) {
