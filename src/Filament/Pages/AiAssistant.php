@@ -1,80 +1,70 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Webkul\Mcp\Filament\Pages;
 
 use BackedEnum;
+use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Support\Facades\Gate;
+use Throwable;
 use Webkul\Mcp\Support\GeminiAssistantService;
 use Webkul\Support\Enums\NavigationGroup;
 
 class AiAssistant extends Page
 {
+    use HasPageShield;
+
     protected string $view = 'mcp::filament.pages.ai-assistant';
 
     protected static ?string $slug = 'ai-assistant';
 
-    protected static string | BackedEnum | null $navigationIcon = 'heroicon-o-sparkles';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-sparkles';
 
     protected static ?int $navigationSort = 1;
 
-    public static function getNavigationIcon(): string | BackedEnum | Htmlable | null
-    {
-        return 'heroicon-o-sparkles';
-    }
-
     public string $message = '';
 
-    /**
-     * @var array<int, array{role: string, content: string, time: string}>
-     */
+    /** @var array<int, array{role:string, content:string, time:string}> */
     public array $messages = [];
 
-    public bool $isLoading = false;
+    protected static function getPagePermission(): ?string
+    {
+        return 'page_mcp_ai_assistant';
+    }
 
     public static function getNavigationLabel(): string
     {
-        return __('المساعد الذكي (AI)');
+        return __('mcp::filament/pages/ai-assistant.navigation');
     }
 
     public static function getNavigationGroup(): string|\UnitEnum
     {
-        return NavigationGroup::Dashboard;
+        return NavigationGroup::Help;
     }
 
-    public function getTitle(): string
+    public function getTitle(): string|Htmlable
     {
-        return __('المساعد الذكي للأعمال (Aureus AI Assistant)');
-    }
-
-    public function getHeading(): string
-    {
-        return __('المساعد الذكي (Aureus ERP AI)');
+        return __('mcp::filament/pages/ai-assistant.title');
     }
 
     public function getSubheading(): ?string
     {
-        return __('اسأل المساعد الذكي عن المبيعات، الحسابات، المخازن، الفواتير، الموظفين أو أي سجل في النظام.');
+        return __('mcp::filament/pages/ai-assistant.subheading');
     }
 
-    public function mount(): void
+    public function mount(GeminiAssistantService $gemini): void
     {
-        $gemini = app(GeminiAssistantService::class);
-
-        if (! $gemini->isConfigured()) {
-            $this->messages[] = [
-                'role'    => 'assistant',
-                'content' => "مرحباً بك! 👋\n\nيرجى العلم أن مفتاح `GEMINI_API_KEY` غير مفعل حالياً في ملف `.env`.\nبعد إضافة المفتاح سأتمكن من الإجابة على استفساراتك وتحليل بيانات الـ ERP في الوقت الفعلي.",
-                'time'    => now()->format('H:i'),
-            ];
-        } else {
-            $this->messages[] = [
-                'role'    => 'assistant',
-                'content' => "أهلاً بك! أنا مساعد AureusERP الذكي المدعوم بـ Google Gemini و MCP 🚀\n\nيمكنني مساعدتك في استعراض التقارير، البحث عن الفواتير أو الموظفين، تحليل أداء المبيعات، ومتابعة المخزون في أي وقت.\nكيف يمكنني مساعدتك اليوم؟",
-                'time'    => now()->format('H:i'),
-            ];
-        }
+        $this->messages[] = [
+            'role' => 'assistant',
+            'content' => $gemini->isConfigured()
+                ? __('mcp::filament/pages/ai-assistant.welcome.ready')
+                : __('mcp::filament/pages/ai-assistant.welcome.missing-key'),
+            'time' => now()->format('H:i'),
+        ];
     }
 
     public function askQuestion(string $question): void
@@ -85,62 +75,45 @@ class AiAssistant extends Page
 
     public function sendMessage(): void
     {
+        Gate::authorize('page_mcp_ai_assistant');
         $input = trim($this->message);
 
         if ($input === '') {
             return;
         }
 
-        $this->messages[] = [
-            'role'    => 'user',
-            'content' => $input,
-            'time'    => now()->format('H:i'),
-        ];
-
+        $this->messages[] = ['role' => 'user', 'content' => $input, 'time' => now()->format('H:i')];
         $this->message = '';
-        $this->isLoading = true;
 
-        $history = array_map(fn ($m) => [
-            'role'    => $m['role'],
-            'content' => $m['content'],
-        ], $this->messages);
+        try {
+            $history = array_map(fn (array $item): array => [
+                'role' => $item['role'],
+                'content' => $item['content'],
+            ], $this->messages);
+            $result = app(GeminiAssistantService::class)->chat($history);
 
-        /** @var GeminiAssistantService $gemini */
-        $gemini = app(GeminiAssistantService::class);
+            if (filled($result['error'] ?? null)) {
+                throw new \RuntimeException((string) $result['error']);
+            }
 
-        $result = $gemini->chat($history);
-
-        if (isset($result['error']) && ! empty($result['error'])) {
             $this->messages[] = [
-                'role'    => 'assistant',
-                'content' => "⚠️ **تنبيه:** {$result['error']}",
-                'time'    => now()->format('H:i'),
+                'role' => 'assistant',
+                'content' => (string) ($result['content'] ?? ''),
+                'time' => now()->format('H:i'),
             ];
-
-            Notification::make()
-                ->title(__('تعذر استكمال الرد من المساعد الذكي'))
-                ->body($result['error'])
-                ->danger()
+        } catch (Throwable $exception) {
+            report($exception);
+            Notification::make()->danger()
+                ->title(__('mcp::filament/pages/ai-assistant.errors.request-failed'))
+                ->body($exception->getMessage())
                 ->send();
-        } else {
-            $this->messages[] = [
-                'role'    => 'assistant',
-                'content' => $result['content'],
-                'time'    => now()->format('H:i'),
-            ];
         }
-
-        $this->isLoading = false;
     }
 
     public function clearChat(): void
     {
+        Gate::authorize('page_mcp_ai_assistant');
         $this->messages = [];
-        $this->mount();
-
-        Notification::make()
-            ->title(__('تم مسح سجل المحادثة بنجاح'))
-            ->success()
-            ->send();
+        $this->mount(app(GeminiAssistantService::class));
     }
 }

@@ -3,6 +3,7 @@
 namespace Webkul\Mcp\Support\Concerns;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 
@@ -132,7 +133,7 @@ trait HasQueryHelpers
 
             return $rows
                 ->map(fn ($row): array => [
-                    'key'   => (string) ($row->value ?? 'null'),
+                    'key' => (string) ($row->value ?? 'null'),
                     'total' => (int) $row->total,
                 ])
                 ->values()
@@ -174,7 +175,7 @@ trait HasQueryHelpers
 
             return $rows
                 ->map(fn ($row): array => [
-                    'key'   => (string) ($row->value ?? 'null'),
+                    'key' => (string) ($row->value ?? 'null'),
                     'total' => (float) $row->total,
                 ])
                 ->values()
@@ -188,11 +189,6 @@ trait HasQueryHelpers
     {
         /** @var Builder $query */
         $query = $modelClass::query();
-
-        if (method_exists($modelClass, 'withoutGlobalScopes')) {
-            /** @var Builder $query */
-            $query = $modelClass::withoutGlobalScopes();
-        }
 
         return $query;
     }
@@ -209,7 +205,7 @@ trait HasQueryHelpers
 
         if (! class_exists($modelClass)) {
             return array_map(fn (array $row): array => [
-                'id'    => isset($row['key']) && is_numeric($row['key']) ? (int) $row['key'] : null,
+                'id' => isset($row['key']) && is_numeric($row['key']) ? (int) $row['key'] : null,
                 'label' => (string) ($row['key'] ?? ''),
                 'total' => $row['total'] ?? 0,
             ], $rows);
@@ -237,10 +233,10 @@ trait HasQueryHelpers
 
         return array_map(function (array $row) use ($labels): array {
             $key = $row['key'] ?? null;
-            $id  = isset($key) && is_numeric($key) ? (int) $key : null;
+            $id = isset($key) && is_numeric($key) ? (int) $key : null;
 
             return [
-                'id'    => $id,
+                'id' => $id,
                 'label' => ($id !== null && isset($labels[$id])) ? (string) $labels[$id] : (string) ($key ?? ''),
                 'total' => $row['total'] ?? 0,
             ];
@@ -250,7 +246,7 @@ trait HasQueryHelpers
     protected function resolveDisplayColumn(string $modelClass): string
     {
         try {
-            /** @var \Illuminate\Database\Eloquent\Model $instance */
+            /** @var Model $instance */
             $instance = new $modelClass;
             $table = $instance->getTable();
 

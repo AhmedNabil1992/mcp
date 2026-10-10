@@ -16,7 +16,8 @@ class UniversalSearchRecordsTool extends Tool
 {
     protected string $description = <<<'MARKDOWN'
         Search across core AureusERP records directly by keyword.
-        Supports entities: "orders", "invoices", "products", "partners", "employees", "tickets", "projects".
+        Supports allowlisted entities across sales, accounting, inventory, CRM, support, software, WiFi,
+        activities, expenses, manufacturing, maintenance, content, referrals and VPN.
     MARKDOWN;
 
     public function __construct(protected UniversalQueryService $universalQueryService) {}
@@ -24,9 +25,9 @@ class UniversalSearchRecordsTool extends Tool
     public function handle(Request $request): Response
     {
         $validated = $request->validate([
-            'entity' => ['required', 'string', 'in:orders,invoices,products,partners,employees,tickets,projects'],
-            'query'  => ['nullable', 'string', 'max:200'],
-            'limit'  => ['nullable', 'integer', 'min:1', 'max:50'],
+            'entity' => ['required', 'string', 'in:orders,invoices,products,partners,employees,tickets,projects,leads,campaigns,licenses,instances,vouchers,activities,expenses,manufacturing_orders,maintenance_requests,articles,blog_posts,referral_codes,vpn_servers'],
+            'query' => ['nullable', 'string', 'max:200'],
+            'limit' => ['nullable', 'integer', 'min:1', 'max:50'],
         ]);
 
         $limit = (int) ($validated['limit'] ?? 10);
@@ -44,13 +45,13 @@ class UniversalSearchRecordsTool extends Tool
     }
 
     /**
-     * @return array<string, \Illuminate\Contracts\JsonSchema\JsonSchema>
+     * @return array<string, JsonSchema>
      */
     public function schema(JsonSchema $schema): array
     {
         return [
             'entity' => $schema->string()
-                ->description('The target ERP entity: "orders", "invoices", "products", "partners", "employees", "tickets", "projects".')
+                ->description('Target entity: orders, invoices, products, partners, employees, tickets, projects, leads, campaigns, licenses, instances, vouchers, activities, expenses, manufacturing_orders, maintenance_requests, articles, blog_posts, referral_codes, or vpn_servers.')
                 ->required(),
             'query' => $schema->string()
                 ->description('Search keywords, e.g. customer name, invoice number, product SKU/name, employee name.'),

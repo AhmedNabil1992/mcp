@@ -4,13 +4,18 @@ namespace Webkul\Mcp\Support;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
+use Laravel\Mcp\Server\Tool;
 use Throwable;
 use Webkul\Mcp\Servers\ErpAgentServer;
+use Webkul\PluginManager\Models\Plugin;
 
 class GeminiAssistantService
 {
     protected ?string $apiKey;
+
     protected string $model;
+
     protected string $baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
 
     public function __construct(
@@ -34,7 +39,7 @@ class GeminiAssistantService
     /**
      * Send a conversation history to Gemini with tool definitions and handle tool calling.
      *
-     * @param array<int, array{role: string, content: string}> $history
+     * @param  array<int, array{role: string, content: string}>  $history
      * @return array{content: string, error?: string}
      */
     public function chat(array $history): array
@@ -42,7 +47,7 @@ class GeminiAssistantService
         if (! $this->isConfigured()) {
             return [
                 'content' => '',
-                'error'   => 'Gemini API Key is not configured. Please set GEMINI_API_KEY in your .env file.',
+                'error' => 'Gemini API Key is not configured. Please set GEMINI_API_KEY in your .env file.',
             ];
         }
 
@@ -51,7 +56,7 @@ class GeminiAssistantService
         foreach ($history as $msg) {
             $role = ($msg['role'] === 'user') ? 'user' : 'model';
             $contents[] = [
-                'role'  => $role,
+                'role' => $role,
                 'parts' => [
                     ['text' => $msg['content']],
                 ],
@@ -61,8 +66,9 @@ class GeminiAssistantService
         $systemInstruction = [
             'parts' => [
                 ['text' => "You are AureusERP AI Assistant, an expert ERP intelligence agent. 
-You answer user questions about sales, purchases, invoices, accounting, inventory, projects, employees, recruitment, partners, products, and technical support.
-You have access to ERP tools. ALWAYS use tools to fetch exact, real-time facts and figures from the ERP before answering.
+You answer questions about every installed AureusERP plugin. Use installed_plugins_overview whenever plugin availability or MCP coverage is unclear.
+You have access to read-only ERP tools. ALWAYS use tools to fetch exact, real-time facts and figures before answering and never claim that data was changed.
+Respect the authenticated user's company and record visibility. Distinguish customer receivables from customer prepaid balances.
 Respond politely, concisely, and format numbers, currencies, and lists cleanly in markdown.
 Reply in the same language as the user's message (Arabic or English)."],
             ],
@@ -78,8 +84,8 @@ Reply in the same language as the user's message (Arabic or English)."],
 
             $body = [
                 'systemInstruction' => $systemInstruction,
-                'contents'          => $contents,
-                'tools'             => [
+                'contents' => $contents,
+                'tools' => [
                     [
                         'functionDeclarations' => $tools,
                     ],
@@ -87,18 +93,23 @@ Reply in the same language as the user's message (Arabic or English)."],
             ];
 
             try {
-                $endpoint = "{$this->baseUrl}/{$this->model}:generateContent?key={$this->apiKey}";
-                $response = Http::timeout(45)->post($endpoint, $body);
+                $endpoint = "{$this->baseUrl}/{$this->model}:generateContent";
+                $response = Http::acceptJson()
+                    ->asJson()
+                    ->withHeader('x-goog-api-key', $this->apiKey)
+                    ->timeout((int) config('services.gemini.timeout', 120))
+                    ->retry(2, 500)
+                    ->post($endpoint, $body);
 
                 if (! $response->successful()) {
                     Log::error('Gemini API error', [
                         'status' => $response->status(),
-                        'body'   => $response->body(),
+                        'body' => $response->body(),
                     ]);
 
                     return [
                         'content' => '',
-                        'error'   => 'Gemini API error (' . $response->status() . '): ' . ($response->json('error.message') ?? $response->body()),
+                        'error' => 'Gemini API error ('.$response->status().'): '.($response->json('error.message') ?? $response->body()),
                     ];
                 }
 
@@ -132,12 +143,13 @@ Reply in the same language as the user's message (Arabic or English)."],
                             $args = $p['functionCall']['args'] ?? [];
                             $p['functionCall']['args'] = empty($args) ? (object) [] : (object) $args;
                         }
+
                         return $p;
                     }, $parts);
 
                     // Append the model's turn to contents
                     $contents[] = [
-                        'role'  => 'model',
+                        'role' => 'model',
                         'parts' => $sanitizedModelParts,
                     ];
 
@@ -152,7 +164,7 @@ Reply in the same language as the user's message (Arabic or English)."],
 
                         $responseParts[] = [
                             'functionResponse' => [
-                                'name'     => $fnName,
+                                'name' => $fnName,
                                 'response' => [
                                     'content' => is_array($toolResult) ? $toolResult : ['data' => $toolResult],
                                 ],
@@ -162,7 +174,7 @@ Reply in the same language as the user's message (Arabic or English)."],
 
                     // Append user's functionResponse turn
                     $contents[] = [
-                        'role'  => 'user',
+                        'role' => 'user',
                         'parts' => $responseParts,
                     ];
 
@@ -174,11 +186,11 @@ Reply in the same language as the user's message (Arabic or English)."],
                     'content' => $textResponse ?: 'I have processed the request.',
                 ];
             } catch (Throwable $e) {
-                Log::error('Gemini request exception: ' . $e->getMessage());
+                Log::error('Gemini request exception: '.$e->getMessage());
 
                 return [
                     'content' => '',
-                    'error'   => 'Exception calling Gemini AI: ' . $e->getMessage(),
+                    'error' => 'Exception calling Gemini AI: '.$e->getMessage(),
                 ];
             }
         }
@@ -200,7 +212,7 @@ Reply in the same language as the user's message (Arabic or English)."],
 
         foreach ($toolClasses as $toolClass) {
             try {
-                /** @var \Laravel\Mcp\Server\Tool $tool */
+                /** @var Tool $tool */
                 $tool = app($toolClass);
                 $array = $tool->toArray();
 
@@ -210,7 +222,7 @@ Reply in the same language as the user's message (Arabic or English)."],
 
                 // Convert schema to Gemini parameters format
                 $parameters = [
-                    'type'       => 'object',
+                    'type' => 'object',
                     'properties' => $inputSchema['properties'] ?? (object) [],
                 ];
 
@@ -219,12 +231,12 @@ Reply in the same language as the user's message (Arabic or English)."],
                 }
 
                 $declarations[] = [
-                    'name'        => str_replace('-', '_', $name),
+                    'name' => str_replace('-', '_', $name),
                     'description' => trim(strip_tags((string) $description)),
-                    'parameters'  => $parameters,
+                    'parameters' => $parameters,
                 ];
             } catch (Throwable $e) {
-                Log::warning("Failed to inspect tool [{$toolClass}] for Gemini: " . $e->getMessage());
+                Log::warning("Failed to inspect tool [{$toolClass}] for Gemini: ".$e->getMessage());
             }
         }
 
@@ -244,6 +256,26 @@ Reply in the same language as the user's message (Arabic or English)."],
             $limit = (int) ($arguments['limit'] ?? 10);
 
             return $this->universalQueryService->search($entity, $query, $limit);
+        }
+
+        if ($cleanName === 'installed_plugins_overview') {
+            if (! Schema::hasTable('plugins')) {
+                return ['error' => 'Plugin metadata table is unavailable.'];
+            }
+
+            return [
+                'installed_plugins' => Plugin::query()
+                    ->where('is_installed', true)
+                    ->orderBy('name')
+                    ->get(['name', 'summary', 'latest_version', 'is_active'])
+                    ->map(fn (Plugin $plugin): array => [
+                        'name' => $plugin->name,
+                        'active' => (bool) $plugin->is_active,
+                        'version' => $plugin->latest_version,
+                        'summary' => $plugin->summary,
+                    ])->all(),
+                'available_mcp_tools' => collect($this->getGeminiToolDeclarations())->pluck('name')->all(),
+            ];
         }
 
         return $this->businessToolService->run($cleanName);

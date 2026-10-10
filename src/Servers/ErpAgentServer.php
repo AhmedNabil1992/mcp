@@ -3,6 +3,9 @@
 namespace Webkul\Mcp\Servers;
 
 use Laravel\Mcp\Server;
+use Laravel\Mcp\Server\Contracts\Transport;
+use Laravel\Mcp\Server\Prompt;
+use Laravel\Mcp\Server\Tool;
 use Webkul\Mcp\Prompts\Admin\InventorySummaryPrompt;
 use Webkul\Mcp\Prompts\Admin\InvoiceSummaryPrompt;
 use Webkul\Mcp\Prompts\Admin\ProjectSummaryPrompt;
@@ -23,12 +26,19 @@ use Webkul\Mcp\Tools\Admin\Business\Accounts\InvoiceListTool;
 use Webkul\Mcp\Tools\Admin\Business\Accounts\InvoiceOverdueSummaryTool;
 use Webkul\Mcp\Tools\Admin\Business\Accounts\InvoicePaymentFollowupsTool;
 use Webkul\Mcp\Tools\Admin\Business\Accounts\InvoiceStatusBreakdownTool;
+use Webkul\Mcp\Tools\Admin\Business\Employees\EmployeeDepartmentOverviewTool;
+use Webkul\Mcp\Tools\Admin\Business\Employees\EmployeeSummaryTool;
+use Webkul\Mcp\Tools\Admin\Business\InstalledPluginsOverviewTool;
 use Webkul\Mcp\Tools\Admin\Business\Inventories\InventoryLocationBalanceTool;
 use Webkul\Mcp\Tools\Admin\Business\Inventories\InventoryLowStockAlertsTool;
 use Webkul\Mcp\Tools\Admin\Business\Inventories\InventoryOperationBacklogTool;
 use Webkul\Mcp\Tools\Admin\Business\Inventories\InventoryOutOfStockItemsTool;
 use Webkul\Mcp\Tools\Admin\Business\Inventories\InventoryReplenishmentQueueTool;
 use Webkul\Mcp\Tools\Admin\Business\Inventories\InventoryWarehouseKpisTool;
+use Webkul\Mcp\Tools\Admin\Business\Leads\LeadPipelineSummaryTool;
+use Webkul\Mcp\Tools\Admin\Business\Marketing\MarketingCampaignsOverviewTool;
+use Webkul\Mcp\Tools\Admin\Business\Partners\PartnerInsightsTool;
+use Webkul\Mcp\Tools\Admin\Business\Products\ProductCatalogSummaryTool;
 use Webkul\Mcp\Tools\Admin\Business\Projects\ProjectDeadlineRiskTool;
 use Webkul\Mcp\Tools\Admin\Business\Projects\ProjectStatusOverviewTool;
 use Webkul\Mcp\Tools\Admin\Business\Projects\ProjectTaskBacklogTool;
@@ -37,19 +47,12 @@ use Webkul\Mcp\Tools\Admin\Business\Purchases\PurchaseOrdersPendingTool;
 use Webkul\Mcp\Tools\Admin\Business\Purchases\PurchaseRequisitionQueueTool;
 use Webkul\Mcp\Tools\Admin\Business\Purchases\PurchaseSpendSummaryTool;
 use Webkul\Mcp\Tools\Admin\Business\Purchases\PurchaseSupplierDeliveryRiskTool;
+use Webkul\Mcp\Tools\Admin\Business\Recruitments\RecruitmentPipelineTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesOrderFulfillmentStatusTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesOrderInsightsTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesPipelineSummaryTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesQuotationConversionTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesTeamPerformanceTool;
-
-use Webkul\Mcp\Tools\Admin\Business\Employees\EmployeeDepartmentOverviewTool;
-use Webkul\Mcp\Tools\Admin\Business\Employees\EmployeeSummaryTool;
-use Webkul\Mcp\Tools\Admin\Business\Leads\LeadPipelineSummaryTool;
-use Webkul\Mcp\Tools\Admin\Business\Marketing\MarketingCampaignsOverviewTool;
-use Webkul\Mcp\Tools\Admin\Business\Partners\PartnerInsightsTool;
-use Webkul\Mcp\Tools\Admin\Business\Products\ProductCatalogSummaryTool;
-use Webkul\Mcp\Tools\Admin\Business\Recruitments\RecruitmentPipelineTool;
 use Webkul\Mcp\Tools\Admin\Business\Software\SoftwareLicensesOverviewTool;
 use Webkul\Mcp\Tools\Admin\Business\SoftwareOnline\OnlineInstancesOverviewTool;
 use Webkul\Mcp\Tools\Admin\Business\Support\SupportTicketOverviewTool;
@@ -71,6 +74,7 @@ class ErpAgentServer extends Server
         All tools are READ-ONLY - they only retrieve data, no write operations.
 
         ## Core Search & Query
+        - installed_plugins_overview: Installed/active plugins and available MCP capabilities
         - universal_search_records: Direct keyword search across Orders, Invoices, Products, Partners, Employees, Tickets, Projects, Leads, Campaigns, Licenses, Instances, Vouchers.
 
         ## Sales Leads & CRM (1 tool)
@@ -152,9 +156,12 @@ class ErpAgentServer extends Server
     MARKDOWN;
 
     /**
-     * @var array<int, class-string<\Laravel\Mcp\Server\Tool>>
+     * @var array<int, class-string<Tool>>
      */
     protected static array $toolsList = [
+        // Runtime plugin and capability discovery
+        InstalledPluginsOverviewTool::class,
+
         // Universal Search
         UniversalSearchRecordsTool::class,
 
@@ -237,7 +244,7 @@ class ErpAgentServer extends Server
     ];
 
     /**
-     * @var array<int, class-string<\Laravel\Mcp\Server\Prompt>>
+     * @var array<int, class-string<Prompt>>
      */
     protected array $prompts = [
         SalesSummaryPrompt::class,
@@ -248,18 +255,18 @@ class ErpAgentServer extends Server
     ];
 
     /**
-     * @var array<int, class-string<\Laravel\Mcp\Server\Resource>>
+     * @var array<int, class-string<Server\Resource>>
      */
     protected array $resources = [];
 
-    public function __construct(\Laravel\Mcp\Server\Contracts\Transport $transport)
+    public function __construct(Transport $transport)
     {
         $this->tools = static::$toolsList;
         parent::__construct($transport);
     }
 
     /**
-     * @return array<int, class-string<\Laravel\Mcp\Server\Tool>>
+     * @return array<int, class-string<Tool>>
      */
     public static function getRegisteredTools(): array
     {

@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'navigation' => 'AI Assistant',
+    'title' => 'AureusERP AI Assistant',
+    'heading' => 'Aureus AI Assistant',
+    'subheading' => 'Ask about installed modules and live ERP business data.',
+    'connected' => 'Gemini connected to read-only AureusERP MCP tools',
+    'clear' => 'New conversation',
+    'send' => 'Send',
+    'thinking' => 'Reading ERP data and analyzing…',
+    'placeholder' => 'Ask about any part of AureusERP…',
+    'read-only' => 'Read-only: the assistant cannot modify ERP records.',
+    'welcome' => [
+        'ready' => 'Welcome! I can inspect installed plugins and analyze live ERP data through read-only MCP tools. How can I help?',
+        'missing-key' => 'GEMINI_API_KEY is not configured. Add it to the application environment to enable the assistant.',
+    ],
+    'prompts' => [
+        'Which plugins are installed and what can you analyze?',
+        'Summarize sales and profitability this month.',
+        'Show overdue invoices and customer prepaid balances.',
+        'What requires attention in support, subscriptions and activities?',
+    ],
+    'errors' => ['request-failed' => 'The AI assistant request failed'],
+];
