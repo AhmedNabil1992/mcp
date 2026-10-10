@@ -20,6 +20,11 @@ class UniversalSearchRecordsTool extends Tool
         activities, expenses, manufacturing, maintenance, content, referrals and VPN.
     MARKDOWN;
 
+    public function name(): string
+    {
+        return 'universal_search_records';
+    }
+
     public function __construct(protected UniversalQueryService $universalQueryService) {}
 
     public function handle(Request $request): Response
