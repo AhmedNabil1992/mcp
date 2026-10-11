@@ -59,7 +59,7 @@ class AiAssistant extends Page
     public function mount(GeminiAssistantService $gemini): void
     {
         $this->messages[] = [
-            'role' => 'assistant',
+            'role'    => 'assistant',
             'content' => $gemini->isConfigured()
                 ? __('mcp::filament/pages/ai-assistant.welcome.ready')
                 : __('mcp::filament/pages/ai-assistant.welcome.missing-key'),
@@ -87,7 +87,7 @@ class AiAssistant extends Page
 
         try {
             $history = array_map(fn (array $item): array => [
-                'role' => $item['role'],
+                'role'    => $item['role'],
                 'content' => $item['content'],
             ], $this->messages);
             $result = app(GeminiAssistantService::class)->chat($history);
@@ -97,9 +97,9 @@ class AiAssistant extends Page
             }
 
             $this->messages[] = [
-                'role' => 'assistant',
+                'role'    => 'assistant',
                 'content' => (string) ($result['content'] ?? ''),
-                'time' => now()->format('H:i'),
+                'time'    => now()->format('H:i'),
             ];
         } catch (Throwable $exception) {
             report($exception);

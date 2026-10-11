@@ -5,8 +5,8 @@ namespace Webkul\Mcp\Support;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
-use RuntimeException;
 use Laravel\Mcp\Server\Tool;
+use RuntimeException;
 use Throwable;
 use Webkul\Mcp\Servers\ErpAgentServer;
 use Webkul\PluginManager\Models\Plugin;
@@ -59,8 +59,8 @@ class GeminiAssistantService
             ->withHeader('x-goog-api-key', $this->apiKey)
             ->timeout(30)
             ->post('https://generativelanguage.googleapis.com/v1beta/auth_tokens', [
-                'uses' => 1,
-                'expireTime' => now()->addMinutes(15)->utc()->format('Y-m-d\TH:i:s\Z'),
+                'uses'                 => 1,
+                'expireTime'           => now()->addMinutes(15)->utc()->format('Y-m-d\TH:i:s\Z'),
                 'newSessionExpireTime' => now()->addMinute()->utc()->format('Y-m-d\TH:i:s\Z'),
             ]);
 
@@ -69,9 +69,9 @@ class GeminiAssistantService
         }
 
         return [
-            'token' => (string) $response->json('name'),
-            'model' => $this->liveModel,
-            'tools' => $this->getGeminiToolDeclarations(),
+            'token'              => (string) $response->json('name'),
+            'model'              => $this->liveModel,
+            'tools'              => $this->getGeminiToolDeclarations(),
             'system_instruction' => $this->systemInstruction(),
         ];
     }
@@ -98,7 +98,7 @@ class GeminiAssistantService
         if (! $this->isConfigured()) {
             return [
                 'content' => '',
-                'error' => 'Gemini API Key is not configured. Please set GEMINI_API_KEY in your .env file.',
+                'error'   => 'Gemini API Key is not configured. Please set GEMINI_API_KEY in your .env file.',
             ];
         }
 
@@ -107,7 +107,7 @@ class GeminiAssistantService
         foreach ($history as $msg) {
             $role = ($msg['role'] === 'user') ? 'user' : 'model';
             $contents[] = [
-                'role' => $role,
+                'role'  => $role,
                 'parts' => [
                     ['text' => $msg['content']],
                 ],
@@ -130,8 +130,8 @@ class GeminiAssistantService
 
             $body = [
                 'systemInstruction' => $systemInstruction,
-                'contents' => $contents,
-                'tools' => [
+                'contents'          => $contents,
+                'tools'             => [
                     [
                         'functionDeclarations' => $tools,
                     ],
@@ -150,12 +150,12 @@ class GeminiAssistantService
                 if (! $response->successful()) {
                     Log::error('Gemini API error', [
                         'status' => $response->status(),
-                        'body' => $response->body(),
+                        'body'   => $response->body(),
                     ]);
 
                     return [
                         'content' => '',
-                        'error' => 'Gemini API error ('.$response->status().'): '.($response->json('error.message') ?? $response->body()),
+                        'error'   => 'Gemini API error ('.$response->status().'): '.($response->json('error.message') ?? $response->body()),
                     ];
                 }
 
@@ -195,7 +195,7 @@ class GeminiAssistantService
 
                     // Append the model's turn to contents
                     $contents[] = [
-                        'role' => 'model',
+                        'role'  => 'model',
                         'parts' => $sanitizedModelParts,
                     ];
 
@@ -210,7 +210,7 @@ class GeminiAssistantService
 
                         $responseParts[] = [
                             'functionResponse' => [
-                                'name' => $fnName,
+                                'name'     => $fnName,
                                 'response' => [
                                     'content' => is_array($toolResult) ? $toolResult : ['data' => $toolResult],
                                 ],
@@ -220,7 +220,7 @@ class GeminiAssistantService
 
                     // Append user's functionResponse turn
                     $contents[] = [
-                        'role' => 'user',
+                        'role'  => 'user',
                         'parts' => $responseParts,
                     ];
 
@@ -236,7 +236,7 @@ class GeminiAssistantService
 
                 return [
                     'content' => '',
-                    'error' => 'Exception calling Gemini AI: '.$e->getMessage(),
+                    'error'   => 'Exception calling Gemini AI: '.$e->getMessage(),
                 ];
             }
         }
@@ -281,7 +281,7 @@ Reply in the same language as the user's message (Arabic or English). For spoken
 
                 // Convert schema to Gemini parameters format
                 $parameters = [
-                    'type' => 'object',
+                    'type'       => 'object',
                     'properties' => $inputSchema['properties'] ?? (object) [],
                 ];
 
@@ -290,9 +290,9 @@ Reply in the same language as the user's message (Arabic or English). For spoken
                 }
 
                 $declarations[] = [
-                    'name' => str_replace('-', '_', $name),
+                    'name'        => str_replace('-', '_', $name),
                     'description' => trim(strip_tags((string) $description)),
-                    'parameters' => $parameters,
+                    'parameters'  => $parameters,
                 ];
             } catch (Throwable $e) {
                 Log::warning("Failed to inspect tool [{$toolClass}] for Gemini: ".$e->getMessage());
@@ -328,8 +328,8 @@ Reply in the same language as the user's message (Arabic or English). For spoken
                     ->orderBy('name')
                     ->get(['name', 'summary', 'latest_version', 'is_active'])
                     ->map(fn (Plugin $plugin): array => [
-                        'name' => $plugin->name,
-                        'active' => (bool) $plugin->is_active,
+                        'name'    => $plugin->name,
+                        'active'  => (bool) $plugin->is_active,
                         'version' => $plugin->latest_version,
                         'summary' => $plugin->summary,
                     ])->all(),
