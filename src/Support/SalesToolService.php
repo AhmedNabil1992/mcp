@@ -14,6 +14,140 @@ class SalesToolService
 {
     use HasQueryHelpers;
 
+    /**
+     * Return sales orders together with invoices linked through the official
+     * sales_order_invoices pivot table.
+     *
+     * @param  array{order_query?: string|null, order_state?: string|null, invoice_status?: string|null, payment_state?: string|null, date_from?: string|null, date_to?: string|null, only_with_invoices?: bool, limit?: int}  $filters
+     */
+    public function salesOrderInvoiceStatus(array $filters = []): array
+    {
+        $query = $this->baseQuery(Order::class)
+            ->with([
+                'partner:id,name',
+                'user:id,name',
+                'currency:id,name',
+                'accountMoves' => fn ($invoiceQuery) => $invoiceQuery
+                    ->select([
+                        'accounts_account_moves.id',
+                        'accounts_account_moves.name',
+                        'accounts_account_moves.reference',
+                        'accounts_account_moves.state',
+                        'accounts_account_moves.move_type',
+                        'accounts_account_moves.payment_state',
+                        'accounts_account_moves.invoice_date',
+                        'accounts_account_moves.invoice_date_due',
+                        'accounts_account_moves.amount_total',
+                        'accounts_account_moves.amount_residual',
+                        'accounts_account_moves.currency_id',
+                    ])
+                    ->with('currency:id,name')
+                    ->orderByDesc('invoice_date')
+                    ->orderByDesc('accounts_account_moves.id'),
+            ])
+            ->select([
+                'sales_orders.id',
+                'sales_orders.name',
+                'sales_orders.reference',
+                'sales_orders.state',
+                'sales_orders.invoice_status',
+                'sales_orders.date_order',
+                'sales_orders.amount_total',
+                'sales_orders.partner_id',
+                'sales_orders.user_id',
+                'sales_orders.currency_id',
+            ]);
+
+        if (filled($filters['order_query'] ?? null)) {
+            $term = trim((string) $filters['order_query']);
+            $query->where(function (Builder $orderQuery) use ($term): void {
+                $orderQuery
+                    ->where('name', 'like', "%{$term}%")
+                    ->orWhere('reference', 'like', "%{$term}%")
+                    ->orWhereHas('partner', fn (Builder $partnerQuery) => $partnerQuery->where('name', 'like', "%{$term}%"));
+            });
+        }
+
+        if (filled($filters['order_state'] ?? null)) {
+            $query->where('state', $filters['order_state']);
+        }
+
+        if (filled($filters['invoice_status'] ?? null)) {
+            $query->where('invoice_status', $filters['invoice_status']);
+        }
+
+        if (filled($filters['payment_state'] ?? null)) {
+            $query->whereHas('accountMoves', fn (Builder $invoiceQuery) => $invoiceQuery
+                ->where('payment_state', $filters['payment_state']));
+        }
+
+        if (filled($filters['date_from'] ?? null)) {
+            $query->whereDate('date_order', '>=', $filters['date_from']);
+        }
+
+        if (filled($filters['date_to'] ?? null)) {
+            $query->whereDate('date_order', '<=', $filters['date_to']);
+        }
+
+        if ((bool) ($filters['only_with_invoices'] ?? false)) {
+            $query->has('accountMoves');
+        }
+
+        $orders = $query
+            ->orderByDesc('date_order')
+            ->orderByDesc('id')
+            ->limit(min(max((int) ($filters['limit'] ?? 25), 1), 100))
+            ->get();
+
+        $invoiceIds = $orders->flatMap(fn (Order $order) => $order->accountMoves->pluck('id'))->unique();
+
+        return [
+            'filters' => $filters,
+            'summary' => [
+                'order_count'                 => $orders->count(),
+                'orders_with_invoices'        => $orders->filter(fn (Order $order): bool => $order->accountMoves->isNotEmpty())->count(),
+                'orders_without_invoices'     => $orders->filter(fn (Order $order): bool => $order->accountMoves->isEmpty())->count(),
+                'unique_linked_invoice_count' => $invoiceIds->count(),
+                'linked_invoice_total'        => round((float) $orders->flatMap->accountMoves->unique('id')->sum('amount_total'), 2),
+                'linked_invoice_residual'     => round((float) $orders->flatMap->accountMoves->unique('id')->sum('amount_residual'), 2),
+            ],
+            'orders' => $orders->map(function (Order $order): array {
+                $invoices = $order->accountMoves;
+
+                return [
+                    'id'                   => (int) $order->id,
+                    'order'                => (string) $order->name,
+                    'reference'            => (string) ($order->reference ?? ''),
+                    'date'                 => $order->date_order?->toDateString(),
+                    'state'                => (string) ($order->state?->value ?? $order->state),
+                    'invoice_status'       => (string) ($order->invoice_status?->value ?? $order->invoice_status),
+                    'customer'             => (string) ($order->partner?->name ?? 'Unknown'),
+                    'salesperson'          => (string) ($order->user?->name ?? 'Unassigned'),
+                    'currency'             => (string) ($order->currency?->name ?? ''),
+                    'order_total'          => (float) $order->amount_total,
+                    'invoice_count'        => $invoices->count(),
+                    'posted_invoice_count' => $invoices->filter(fn ($invoice): bool => ($invoice->state?->value ?? $invoice->state) === 'posted')->count(),
+                    'paid_invoice_count'   => $invoices->filter(fn ($invoice): bool => ($invoice->payment_state?->value ?? $invoice->payment_state) === 'paid')->count(),
+                    'invoiced_total'       => round((float) $invoices->sum('amount_total'), 2),
+                    'residual_total'       => round((float) $invoices->sum('amount_residual'), 2),
+                    'invoices'             => $invoices->map(fn ($invoice): array => [
+                        'id'              => (int) $invoice->id,
+                        'invoice'         => (string) ($invoice->name ?? ''),
+                        'reference'       => (string) ($invoice->reference ?? ''),
+                        'type'            => (string) ($invoice->move_type?->value ?? $invoice->move_type),
+                        'state'           => (string) ($invoice->state?->value ?? $invoice->state),
+                        'payment_state'   => (string) ($invoice->payment_state?->value ?? $invoice->payment_state),
+                        'invoice_date'    => $invoice->invoice_date?->toDateString(),
+                        'due_date'        => $invoice->invoice_date_due?->toDateString(),
+                        'amount_total'    => (float) $invoice->amount_total,
+                        'amount_residual' => (float) $invoice->amount_residual,
+                        'currency'        => (string) ($invoice->currency?->name ?? ''),
+                    ])->values()->all(),
+                ];
+            })->values()->all(),
+        ];
+    }
+
     public function salesPipelineSummary(): array
     {
         $model = Order::class;

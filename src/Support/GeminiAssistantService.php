@@ -253,6 +253,7 @@ class GeminiAssistantService
 You answer questions about every installed AureusERP plugin. Use installed_plugins_overview whenever plugin availability or MCP coverage is unclear.
 You have access to read-only ERP tools. ALWAYS use tools to fetch exact, real-time facts and figures before answering and never claim that data was changed.
 Prefer a dedicated metric when one exists. For other factual data questions, inspect business_data_catalog and then use query_business_data with exact column names.
+For questions connecting sales orders to invoices, payment state, residual balance, or due dates, always use sales_order_invoice_status.
 Respect the authenticated user's company and record visibility. Distinguish customer receivables from customer prepaid balances.
 For monthly sales, invoices, revenue, or profitability, use monthly_sales_profitability. It includes sales-order invoices and direct invoices; sales_order_insights is only order intake and must not be presented as complete invoiced sales.
 When asked how many licenses were made or activated this month, report software_licenses_overview.current_month.activated_count, not created_count or total_licenses.
@@ -335,6 +336,10 @@ Reply in the same language as the user's message (Arabic or English). For spoken
                 direction: (string) ($arguments['direction'] ?? 'desc'),
                 limit: (int) ($arguments['limit'] ?? 25),
             );
+        }
+
+        if ($cleanName === 'sales_order_invoice_status') {
+            return $this->businessToolService->salesOrderInvoiceStatus($arguments);
         }
 
         if ($cleanName === 'installed_plugins_overview') {

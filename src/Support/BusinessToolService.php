@@ -73,13 +73,13 @@ class BusinessToolService
             'support_ticket_overview'      => $this->supportService->supportTicketOverview(),
 
             // Invoice Metrics
-            'invoice_list'              => $this->invoiceService->invoiceList(),
+            'invoice_list'                => $this->invoiceService->invoiceList(),
             'monthly_sales_profitability' => $this->invoiceService->monthlySalesProfitability(),
-            'invoice_overdue_summary'   => $this->invoiceService->invoiceOverdueSummary(),
-            'invoice_aging_buckets'     => $this->invoiceService->invoiceAgingBuckets(),
-            'invoice_payment_followups' => $this->invoiceService->invoicePaymentFollowups(),
-            'invoice_status_breakdown'  => $this->invoiceService->invoiceStatusBreakdown(),
-            'credit_notes_overview'     => $this->invoiceService->creditNotesOverview(),
+            'invoice_overdue_summary'     => $this->invoiceService->invoiceOverdueSummary(),
+            'invoice_aging_buckets'       => $this->invoiceService->invoiceAgingBuckets(),
+            'invoice_payment_followups'   => $this->invoiceService->invoicePaymentFollowups(),
+            'invoice_status_breakdown'    => $this->invoiceService->invoiceStatusBreakdown(),
+            'credit_notes_overview'       => $this->invoiceService->creditNotesOverview(),
 
             // Accounting - Summary Metrics
             'account_receivable_summary'      => $this->accountingService->accountReceivableSummary(),
@@ -127,6 +127,11 @@ class BusinessToolService
         };
 
         return $this->decorateMetricPayload($metric, $payload);
+    }
+
+    public function salesOrderInvoiceStatus(array $filters = []): array
+    {
+        return $this->salesService->salesOrderInvoiceStatus($filters);
     }
 
     protected function decorateMetricPayload(string $metric, array $payload): array

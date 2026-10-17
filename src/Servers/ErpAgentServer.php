@@ -53,6 +53,7 @@ use Webkul\Mcp\Tools\Admin\Business\Recruitments\RecruitmentPipelineTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\MonthlySalesProfitabilityTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesOrderFulfillmentStatusTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesOrderInsightsTool;
+use Webkul\Mcp\Tools\Admin\Business\Sales\SalesOrderInvoiceStatusTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesPipelineSummaryTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesQuotationConversionTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesTeamPerformanceTool;
@@ -113,9 +114,10 @@ class ErpAgentServer extends Server
         ## Technical Support (1 tool)
         - support_ticket_overview: Open/unread tickets, priorities, assignees, client breakdown
 
-        ## Sales Management (6 tools)
+        ## Sales Management (7 tools)
         - monthly_sales_profitability: Complete posted monthly invoices (including direct invoices), BOM costs, and estimated gross profit
         - sales_order_insights: Recent orders, revenue, counts by period, top performers
+        - sales_order_invoice_status: Sales orders joined to their official invoices, posting/payment states, totals and residuals
         - sales_order_fulfillment_status: Delivery status, overdue commitments and opportunities
         - sales_pipeline_summary: Leads and opportunities
         - sales_team_performance: Team metrics
@@ -207,6 +209,7 @@ class ErpAgentServer extends Server
         // Sales
         MonthlySalesProfitabilityTool::class,
         SalesOrderInsightsTool::class,
+        SalesOrderInvoiceStatusTool::class,
         SalesOrderFulfillmentStatusTool::class,
         SalesPipelineSummaryTool::class,
         SalesTeamPerformanceTool::class,

@@ -23,7 +23,7 @@ Tools: documentation search, plugin introspection, route discovery, model inspec
 |---|---|---|
 | **HTTP** | `POST /mcp/erp` | OAuth Bearer token |
 
-READ-ONLY business insights (50 tools across the installed ERP modules). No stdio transport — this server requires authentication.
+READ-ONLY business insights (51 tools across the installed ERP modules). No stdio transport — this server requires authentication.
 
 OAuth discovery + registration endpoints are also exposed (via `Mcp::oauthRoutes()`):
 
@@ -159,9 +159,11 @@ Available via **HTTP only** (`POST /mcp/erp`, requires OAuth). For business user
 
 - `support_ticket_overview` — Open, unread, and reopened tickets, priority & status distributions
 
-#### Sales (5 tools)
+#### Sales (7 tools)
 
+- `monthly_sales_profitability` — Posted monthly invoices, direct invoices, BOM costs, and estimated gross profit
 - `sales_order_insights` — Recent orders, revenue, counts by period, top performers
+- `sales_order_invoice_status` — Sales orders with their officially linked invoices, posting/payment states, totals, residuals, and due dates
 - `sales_order_fulfillment_status` — Delivery status and overdue commitments
 - `sales_pipeline_summary` — Leads and opportunities
 - `sales_team_performance` — Team metrics

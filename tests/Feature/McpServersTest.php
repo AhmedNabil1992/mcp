@@ -8,6 +8,7 @@ use Webkul\Mcp\Tools\Admin\Business\BusinessDataCatalogTool;
 use Webkul\Mcp\Tools\Admin\Business\Employees\EmployeeSummaryTool;
 use Webkul\Mcp\Tools\Admin\Business\Partners\PartnerInsightsTool;
 use Webkul\Mcp\Tools\Admin\Business\QueryBusinessDataTool;
+use Webkul\Mcp\Tools\Admin\Business\Sales\SalesOrderInvoiceStatusTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesPipelineSummaryTool;
 use Webkul\Mcp\Tools\Admin\Business\UniversalSearchRecordsTool;
 use Webkul\Mcp\Tools\Dev\ListPluginsTool;
@@ -127,4 +128,18 @@ it('does not expose protected business columns', function () {
     ]);
 
     $response->assertHasErrors();
+});
+
+it('returns sales orders with their officially linked invoices', function () {
+    $user = User::factory()->create();
+
+    $response = ErpAgentServer::actingAs($user)->tool(SalesOrderInvoiceStatusTool::class, [
+        'only_with_invoices' => true,
+        'limit'              => 5,
+    ]);
+
+    $response
+        ->assertOk()
+        ->assertSee('orders')
+        ->assertSee('unique_linked_invoice_count');
 });
