@@ -26,6 +26,7 @@ use Webkul\Mcp\Tools\Admin\Business\Accounts\InvoiceListTool;
 use Webkul\Mcp\Tools\Admin\Business\Accounts\InvoiceOverdueSummaryTool;
 use Webkul\Mcp\Tools\Admin\Business\Accounts\InvoicePaymentFollowupsTool;
 use Webkul\Mcp\Tools\Admin\Business\Accounts\InvoiceStatusBreakdownTool;
+use Webkul\Mcp\Tools\Admin\Business\BusinessDataCatalogTool;
 use Webkul\Mcp\Tools\Admin\Business\Employees\EmployeeDepartmentOverviewTool;
 use Webkul\Mcp\Tools\Admin\Business\Employees\EmployeeSummaryTool;
 use Webkul\Mcp\Tools\Admin\Business\InstalledPluginsOverviewTool;
@@ -47,10 +48,11 @@ use Webkul\Mcp\Tools\Admin\Business\Purchases\PurchaseOrdersPendingTool;
 use Webkul\Mcp\Tools\Admin\Business\Purchases\PurchaseRequisitionQueueTool;
 use Webkul\Mcp\Tools\Admin\Business\Purchases\PurchaseSpendSummaryTool;
 use Webkul\Mcp\Tools\Admin\Business\Purchases\PurchaseSupplierDeliveryRiskTool;
+use Webkul\Mcp\Tools\Admin\Business\QueryBusinessDataTool;
 use Webkul\Mcp\Tools\Admin\Business\Recruitments\RecruitmentPipelineTool;
+use Webkul\Mcp\Tools\Admin\Business\Sales\MonthlySalesProfitabilityTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesOrderFulfillmentStatusTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesOrderInsightsTool;
-use Webkul\Mcp\Tools\Admin\Business\Sales\MonthlySalesProfitabilityTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesPipelineSummaryTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesQuotationConversionTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesTeamPerformanceTool;
@@ -77,6 +79,8 @@ class ErpAgentServer extends Server
         ## Core Search & Query
         - installed_plugins_overview: Installed/active plugins and available MCP capabilities
         - universal_search_records: Direct keyword search across Orders, Invoices, Products, Partners, Employees, Tickets, Projects, Leads, Campaigns, Licenses, Instances, Vouchers.
+        - business_data_catalog: Discover queryable business entities and their real columns.
+        - query_business_data: Safe generic lists, counts, aggregates, filters and grouping for questions not covered by a dedicated metric.
 
         ## Sales Leads & CRM (1 tool)
         - lead_pipeline_summary: Leads count, status, sources, temperatures, and sales reps
@@ -163,6 +167,8 @@ class ErpAgentServer extends Server
     protected static array $toolsList = [
         // Runtime plugin and capability discovery
         InstalledPluginsOverviewTool::class,
+        BusinessDataCatalogTool::class,
+        QueryBusinessDataTool::class,
 
         // Universal Search
         UniversalSearchRecordsTool::class,

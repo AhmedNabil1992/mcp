@@ -4,7 +4,12 @@ use App\Models\User;
 use Webkul\Mcp\Servers\DevAgentServer;
 use Webkul\Mcp\Servers\ErpAgentServer;
 use Webkul\Mcp\Tools\Admin\Business\Accounts\InvoiceListTool;
+use Webkul\Mcp\Tools\Admin\Business\BusinessDataCatalogTool;
+use Webkul\Mcp\Tools\Admin\Business\Employees\EmployeeSummaryTool;
+use Webkul\Mcp\Tools\Admin\Business\Partners\PartnerInsightsTool;
+use Webkul\Mcp\Tools\Admin\Business\QueryBusinessDataTool;
 use Webkul\Mcp\Tools\Admin\Business\Sales\SalesPipelineSummaryTool;
+use Webkul\Mcp\Tools\Admin\Business\UniversalSearchRecordsTool;
 use Webkul\Mcp\Tools\Dev\ListPluginsTool;
 use Webkul\Mcp\Tools\Dev\PluginSummaryTool;
 
@@ -54,7 +59,7 @@ it('returns sales pipeline payload for erp agent server', function () {
 it('returns employee summary payload for erp agent server', function () {
     $user = User::factory()->create();
 
-    $response = ErpAgentServer::actingAs($user)->tool(\Webkul\Mcp\Tools\Admin\Business\Employees\EmployeeSummaryTool::class);
+    $response = ErpAgentServer::actingAs($user)->tool(EmployeeSummaryTool::class);
 
     $response
         ->assertOk()
@@ -64,7 +69,7 @@ it('returns employee summary payload for erp agent server', function () {
 it('returns partner insights payload for erp agent server', function () {
     $user = User::factory()->create();
 
-    $response = ErpAgentServer::actingAs($user)->tool(\Webkul\Mcp\Tools\Admin\Business\Partners\PartnerInsightsTool::class);
+    $response = ErpAgentServer::actingAs($user)->tool(PartnerInsightsTool::class);
 
     $response
         ->assertOk()
@@ -74,7 +79,7 @@ it('returns partner insights payload for erp agent server', function () {
 it('executes universal search records tool without error', function () {
     $user = User::factory()->create();
 
-    $response = ErpAgentServer::actingAs($user)->tool(\Webkul\Mcp\Tools\Admin\Business\UniversalSearchRecordsTool::class, [
+    $response = ErpAgentServer::actingAs($user)->tool(UniversalSearchRecordsTool::class, [
         'entity' => 'partners',
         'query'  => 'test',
         'limit'  => 5,
@@ -85,3 +90,41 @@ it('executes universal search records tool without error', function () {
         ->assertSee('entity');
 });
 
+it('exposes the safe business data catalog', function () {
+    $user = User::factory()->create();
+
+    $response = ErpAgentServer::actingAs($user)->tool(BusinessDataCatalogTool::class, [
+        'entity' => 'products',
+    ]);
+
+    $response
+        ->assertOk()
+        ->assertSee('products')
+        ->assertSee('columns');
+});
+
+it('runs a generic read only business count', function () {
+    $user = User::factory()->create();
+
+    $response = ErpAgentServer::actingAs($user)->tool(QueryBusinessDataTool::class, [
+        'entity'    => 'products',
+        'operation' => 'count',
+    ]);
+
+    $response
+        ->assertOk()
+        ->assertSee('count')
+        ->assertSee('value');
+});
+
+it('does not expose protected business columns', function () {
+    $user = User::factory()->create();
+
+    $response = ErpAgentServer::actingAs($user)->tool(QueryBusinessDataTool::class, [
+        'entity'    => 'software_licenses',
+        'operation' => 'list',
+        'columns'   => ['serial_number'],
+    ]);
+
+    $response->assertHasErrors();
+});

@@ -24,6 +24,7 @@ class GeminiAssistantService
     public function __construct(
         protected BusinessToolService $businessToolService,
         protected UniversalQueryService $universalQueryService,
+        protected BusinessDataQueryService $businessDataQueryService,
     ) {
         $this->apiKey = config('services.gemini.api_key') ?: env('GEMINI_API_KEY');
         $this->model = config('services.gemini.model') ?: env('GEMINI_MODEL', 'gemini-2.5-flash');
@@ -251,6 +252,7 @@ class GeminiAssistantService
         return "You are AureusERP AI Assistant, an expert ERP intelligence agent.
 You answer questions about every installed AureusERP plugin. Use installed_plugins_overview whenever plugin availability or MCP coverage is unclear.
 You have access to read-only ERP tools. ALWAYS use tools to fetch exact, real-time facts and figures before answering and never claim that data was changed.
+Prefer a dedicated metric when one exists. For other factual data questions, inspect business_data_catalog and then use query_business_data with exact column names.
 Respect the authenticated user's company and record visibility. Distinguish customer receivables from customer prepaid balances.
 For monthly sales, invoices, revenue, or profitability, use monthly_sales_profitability. It includes sales-order invoices and direct invoices; sales_order_insights is only order intake and must not be presented as complete invoiced sales.
 When asked how many licenses were made or activated this month, report software_licenses_overview.current_month.activated_count, not created_count or total_licenses.
@@ -315,6 +317,24 @@ Reply in the same language as the user's message (Arabic or English). For spoken
             $limit = (int) ($arguments['limit'] ?? 10);
 
             return $this->universalQueryService->search($entity, $query, $limit);
+        }
+
+        if ($cleanName === 'business_data_catalog') {
+            return $this->businessDataQueryService->catalog($arguments['entity'] ?? null);
+        }
+
+        if ($cleanName === 'query_business_data') {
+            return $this->businessDataQueryService->query(
+                entity: (string) ($arguments['entity'] ?? ''),
+                operation: (string) ($arguments['operation'] ?? 'list'),
+                metricColumn: isset($arguments['metric_column']) ? (string) $arguments['metric_column'] : null,
+                groupBy: isset($arguments['group_by']) ? (string) $arguments['group_by'] : null,
+                filters: is_array($arguments['filters'] ?? null) ? $arguments['filters'] : [],
+                columns: is_array($arguments['columns'] ?? null) ? $arguments['columns'] : [],
+                orderBy: isset($arguments['order_by']) ? (string) $arguments['order_by'] : null,
+                direction: (string) ($arguments['direction'] ?? 'desc'),
+                limit: (int) ($arguments['limit'] ?? 25),
+            );
         }
 
         if ($cleanName === 'installed_plugins_overview') {

@@ -23,7 +23,7 @@ Tools: documentation search, plugin introspection, route discovery, model inspec
 |---|---|---|
 | **HTTP** | `POST /mcp/erp` | OAuth Bearer token |
 
-READ-ONLY business insights (34 tools across Sales, Purchases, Invoices, Accounting, Inventory, Projects). No stdio transport — this server requires authentication.
+READ-ONLY business insights (50 tools across the installed ERP modules). No stdio transport — this server requires authentication.
 
 OAuth discovery + registration endpoints are also exposed (via `Mcp::oauthRoutes()`):
 
@@ -35,8 +35,8 @@ OAuth discovery + registration endpoints are also exposed (via `Mcp::oauthRoutes
 
 - PHP `^8.3`
 - Laravel `^13`
-- Filament `^4`
-- `laravel/mcp` `^0.5`
+- Filament `^5`
+- `laravel/mcp` `^0.9`
 - `laravel/passport` `^13`
 - AureusERP plugin manager
 
@@ -112,6 +112,11 @@ Available via **HTTP only** (`POST /mcp/erp`, requires OAuth). For business user
 #### Search & Query (1 tool)
 
 - `universal_search_records` — Search across core entities (Orders, Invoices, Products, Partners, Employees, Tickets, Projects, Leads, Campaigns, Licenses, Instances, Vouchers) by keyword
+
+#### Flexible Business Data (2 tools)
+
+- `business_data_catalog` — Discover the allowlisted business entities and their queryable database columns
+- `query_business_data` — Run safe read-only lists, counts, aggregates, grouping, sorting, and structured filters without accepting raw SQL
 
 #### Leads & CRM (1 tool)
 
