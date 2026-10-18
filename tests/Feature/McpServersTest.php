@@ -3,6 +3,7 @@
 use App\Models\User;
 use Webkul\Mcp\Servers\DevAgentServer;
 use Webkul\Mcp\Servers\ErpAgentServer;
+use Webkul\Mcp\Support\GeminiAssistantService;
 use Webkul\Mcp\Tools\Admin\Business\Accounts\InvoiceListTool;
 use Webkul\Mcp\Tools\Admin\Business\BusinessDataCatalogTool;
 use Webkul\Mcp\Tools\Admin\Business\Employees\EmployeeSummaryTool;
@@ -142,4 +143,13 @@ it('returns sales orders with their officially linked invoices', function () {
         ->assertOk()
         ->assertSee('orders')
         ->assertSee('unique_linked_invoice_count');
+});
+
+it('builds Gemini-compatible tool declarations', function () {
+    $declarations = app(GeminiAssistantService::class)->getGeminiToolDeclarations();
+    $payload = json_encode($declarations, JSON_THROW_ON_ERROR);
+
+    expect($declarations)->not->toBeEmpty()
+        ->and($payload)->not->toContain('additionalProperties')
+        ->and($payload)->not->toContain('"$schema"');
 });

@@ -281,11 +281,12 @@ Reply in the same language as the user's message (Arabic or English). For spoken
                 $name = $array['name'];
                 $description = $array['description'] ?? $array['title'] ?? $name;
                 $inputSchema = $array['inputSchema'] ?? [];
+                $properties = $this->sanitizeGeminiSchema($inputSchema['properties'] ?? []);
 
                 // Convert schema to Gemini parameters format
                 $parameters = [
                     'type'       => 'object',
-                    'properties' => $inputSchema['properties'] ?? (object) [],
+                    'properties' => $properties === [] ? (object) [] : $properties,
                 ];
 
                 if (! empty($inputSchema['required'])) {
@@ -303,6 +304,29 @@ Reply in the same language as the user's message (Arabic or English). For spoken
         }
 
         return $declarations;
+    }
+
+    /**
+     * Remove JSON Schema keywords that are not accepted by the Gemini
+     * FunctionDeclaration schema, including keywords nested in array items.
+     */
+    protected function sanitizeGeminiSchema(mixed $schema): mixed
+    {
+        if (! is_array($schema)) {
+            return $schema;
+        }
+
+        $sanitized = [];
+
+        foreach ($schema as $key => $value) {
+            if (in_array($key, ['additionalProperties', '$schema'], true)) {
+                continue;
+            }
+
+            $sanitized[$key] = $this->sanitizeGeminiSchema($value);
+        }
+
+        return $sanitized;
     }
 
     /**

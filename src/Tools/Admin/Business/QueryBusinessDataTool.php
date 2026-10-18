@@ -77,7 +77,7 @@ final class QueryBusinessDataTool extends Tool
                 'column'   => $schema->string()->required(),
                 'operator' => $schema->string()->enum(['=', '!=', '>', '>=', '<', '<=', 'like', 'not_like', 'in', 'not_in', 'between', 'is_null', 'not_null'])->default('='),
                 'value'    => $schema->string()->description('Filter value. Use separate >= and <= filters for date or numeric ranges.'),
-            ])->withoutAdditionalProperties())->max(20),
+            ]))->max(20),
             'columns'   => $schema->array()->items($schema->string())->max(30)->description('Columns returned by list operations.'),
             'order_by'  => $schema->string(),
             'direction' => $schema->string()->enum(['asc', 'desc'])->default('desc'),
