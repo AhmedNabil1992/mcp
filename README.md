@@ -64,6 +64,7 @@ This command does the setup automatically:
 - publishes MCP OAuth authorization view (`mcp-views`)
 - runs Passport API install scaffold (`install:api --passport`)
 - ensures `config/auth.php` has MCP API guard/provider
+- creates the per-user AI assistant chat history table
 - configures Passport authorization view from the MCP plugin service provider
 - clears caches
 

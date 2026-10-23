@@ -26,11 +26,15 @@ class McpServiceProvider extends PackageServiceProvider
             ->hasViews()
             ->hasTranslations()
             ->hasRoute('ai')
-            ->hasInstallCommand(function (InstallCommand $command) {
-                $command->endWith = function (InstallCommand $installCommand): void {
+            ->hasMigrations([
+                '2026_10_23_000001_create_mcp_chat_messages_table',
+            ])
+            ->runsMigrations()
+            ->hasInstallCommand(fn (InstallCommand $command) => $command
+                ->runsMigrations()
+                ->endWith(function (InstallCommand $installCommand): void {
                     $installCommand->call('mcp:setup');
-                };
-            })
+                }))
             ->hasUninstallCommand(function (UninstallCommand $command) {})
             ->hasCommands([
                 SetupCommand::class,

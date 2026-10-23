@@ -8,15 +8,19 @@ use BackedEnum;
 use BezhanSalleh\FilamentShield\Traits\HasPageShield;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Gate;
 use Throwable;
+use Webkul\Mcp\Support\ChatHistoryService;
 use Webkul\Mcp\Support\GeminiAssistantService;
 use Webkul\Support\Enums\NavigationGroup;
 
 class AiAssistant extends Page
 {
     use HasPageShield;
+
+    private const AI_HISTORY_LIMIT = 50;
 
     protected string $view = 'mcp::filament.pages.ai-assistant';
 
@@ -28,7 +32,7 @@ class AiAssistant extends Page
 
     public string $message = '';
 
-    /** @var array<int, array{role:string, content:string, time:string}> */
+    /** @var array<int, array{id:int|string, role:string, content:string, time:string}> */
     public array $messages = [];
 
     protected static function getPagePermission(): ?string
@@ -56,9 +60,16 @@ class AiAssistant extends Page
         return __('mcp::filament/pages/ai-assistant.subheading');
     }
 
-    public function mount(GeminiAssistantService $gemini): void
+    public function mount(GeminiAssistantService $gemini, ChatHistoryService $history): void
     {
+        $this->messages = $history->recentForUser($this->authenticatedUserId());
+
+        if ($this->messages !== []) {
+            return;
+        }
+
         $this->messages[] = [
+            'id'      => 'welcome',
             'role'    => 'assistant',
             'content' => $gemini->isConfigured()
                 ? __('mcp::filament/pages/ai-assistant.welcome.ready')
@@ -76,31 +87,33 @@ class AiAssistant extends Page
     public function sendMessage(): void
     {
         Gate::authorize('page_mcp_ai_assistant');
-        $input = trim($this->message);
+        $input = mb_substr(trim($this->message), 0, 4000);
 
         if ($input === '') {
             return;
         }
 
-        $this->messages[] = ['role' => 'user', 'content' => $input, 'time' => now()->format('H:i')];
+        $historyService = app(ChatHistoryService::class);
+        $userId = $this->authenticatedUserId();
+        $this->messages[] = $historyService->append($userId, 'user', $input);
         $this->message = '';
 
         try {
             $history = array_map(fn (array $item): array => [
                 'role'    => $item['role'],
                 'content' => $item['content'],
-            ], $this->messages);
+            ], array_slice($this->messages, -self::AI_HISTORY_LIMIT));
             $result = app(GeminiAssistantService::class)->chat($history);
 
             if (filled($result['error'] ?? null)) {
                 throw new \RuntimeException((string) $result['error']);
             }
 
-            $this->messages[] = [
-                'role'    => 'assistant',
-                'content' => (string) ($result['content'] ?? ''),
-                'time'    => now()->format('H:i'),
-            ];
+            $this->messages[] = $historyService->append(
+                $userId,
+                'assistant',
+                (string) ($result['content'] ?? ''),
+            );
         } catch (Throwable $exception) {
             report($exception);
             Notification::make()->danger()
@@ -113,8 +126,9 @@ class AiAssistant extends Page
     public function clearChat(): void
     {
         Gate::authorize('page_mcp_ai_assistant');
+        app(ChatHistoryService::class)->clearForUser($this->authenticatedUserId());
         $this->messages = [];
-        $this->mount(app(GeminiAssistantService::class));
+        $this->mount(app(GeminiAssistantService::class), app(ChatHistoryService::class));
     }
 
     /** @return array<string, mixed> */
@@ -144,11 +158,32 @@ class AiAssistant extends Page
         $assistantTranscript = trim($assistantTranscript);
 
         if ($userTranscript !== '') {
-            $this->messages[] = ['role' => 'user', 'content' => mb_substr($userTranscript, 0, 4000), 'time' => now()->format('H:i')];
+            $this->messages[] = app(ChatHistoryService::class)->append(
+                $this->authenticatedUserId(),
+                'user',
+                mb_substr($userTranscript, 0, 4000),
+                'voice',
+            );
         }
 
         if ($assistantTranscript !== '') {
-            $this->messages[] = ['role' => 'assistant', 'content' => mb_substr($assistantTranscript, 0, 12000), 'time' => now()->format('H:i')];
+            $this->messages[] = app(ChatHistoryService::class)->append(
+                $this->authenticatedUserId(),
+                'assistant',
+                mb_substr($assistantTranscript, 0, 12000),
+                'voice',
+            );
         }
+    }
+
+    private function authenticatedUserId(): int
+    {
+        $userId = auth()->id();
+
+        if ($userId === null) {
+            throw new AuthenticationException;
+        }
+
+        return (int) $userId;
     }
 }

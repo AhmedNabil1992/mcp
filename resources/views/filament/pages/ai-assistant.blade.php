@@ -31,7 +31,7 @@
             </div>
             <div id="mcp-ai-messages" class="flex-1 space-y-5 overflow-y-auto bg-gray-50 p-6 dark:bg-gray-950">
                 @foreach($messages as $index => $item)
-                    <div wire:key="mcp-ai-message-{{ $index }}" class="flex {{ $item['role'] === 'user' ? 'justify-end' : 'justify-start' }}">
+                    <div wire:key="mcp-ai-message-{{ $item['id'] ?? $index }}" class="flex {{ $item['role'] === 'user' ? 'justify-end' : 'justify-start' }}">
                         <div class="max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-7 {{ $item['role'] === 'user' ? 'bg-primary-600 text-white' : 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-950/5 dark:bg-white/5 dark:text-white dark:ring-white/10' }}">
                             @if($item['role'] === 'assistant')<div class="prose prose-sm max-w-none dark:prose-invert">{!! Str::markdown($item['content']) !!}</div>@else<div class="whitespace-pre-wrap">{{ $item['content'] }}</div>@endif
                             <div class="mt-1 text-[10px] opacity-70">{{ $item['time'] }}</div>
